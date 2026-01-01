@@ -35,7 +35,6 @@ export const Settings: React.FC = () => {
       if (error) throw error;
 
       setSuccess('Password updated successfully!');
-      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: any) {
