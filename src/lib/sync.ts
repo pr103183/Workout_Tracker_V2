@@ -1,13 +1,5 @@
 import { supabase } from './supabase';
 import { db } from './db';
-import type {
-  Exercise,
-  Workout,
-  WorkoutExercise,
-  WorkoutLog,
-  WorkoutLogSet,
-  PlannedWorkout
-} from './db';
 
 export class SyncService {
   private syncInProgress = false;
@@ -37,15 +29,14 @@ export class SyncService {
 
   private async syncExercises(userId: string): Promise<void> {
     const unsyncedLocal = await db.exercises
-      .where('_synced')
-      .equals(false)
+      .filter(e => e._synced === false)
       .toArray();
 
     for (const exercise of unsyncedLocal) {
       const { _synced, ...exerciseData } = exercise;
       const { error } = await supabase
         .from('exercises')
-        .upsert(exerciseData);
+        .upsert(exerciseData as any);
 
       if (!error) {
         await db.exercises.update(exercise.id, { _synced: true });
@@ -59,22 +50,21 @@ export class SyncService {
 
     if (remoteExercises) {
       for (const exercise of remoteExercises) {
-        await db.exercises.put({ ...exercise, _synced: true });
+        await db.exercises.put({ ...exercise as any, _synced: true });
       }
     }
   }
 
   private async syncWorkouts(userId: string): Promise<void> {
     const unsyncedLocal = await db.workouts
-      .where('_synced')
-      .equals(false)
+      .filter(w => w._synced === false)
       .toArray();
 
     for (const workout of unsyncedLocal) {
       const { _synced, ...workoutData } = workout;
       const { error } = await supabase
         .from('workouts')
-        .upsert(workoutData);
+        .upsert(workoutData as any);
 
       if (!error) {
         await db.workouts.update(workout.id, { _synced: true });
@@ -88,22 +78,21 @@ export class SyncService {
 
     if (remoteWorkouts) {
       for (const workout of remoteWorkouts) {
-        await db.workouts.put({ ...workout, _synced: true });
+        await db.workouts.put({ ...workout as any, _synced: true });
       }
     }
   }
 
   private async syncWorkoutExercises(userId: string): Promise<void> {
     const unsyncedLocal = await db.workout_exercises
-      .where('_synced')
-      .equals(false)
+      .filter(we => we._synced === false)
       .toArray();
 
     for (const workoutExercise of unsyncedLocal) {
       const { _synced, ...data } = workoutExercise;
       const { error } = await supabase
         .from('workout_exercises')
-        .upsert(data);
+        .upsert(data as any);
 
       if (!error) {
         await db.workout_exercises.update(workoutExercise.id, { _synced: true });
@@ -125,7 +114,7 @@ export class SyncService {
 
       if (remoteData) {
         for (const item of remoteData) {
-          await db.workout_exercises.put({ ...item, _synced: true });
+          await db.workout_exercises.put({ ...item as any, _synced: true });
         }
       }
     }
@@ -133,15 +122,14 @@ export class SyncService {
 
   private async syncWorkoutLogs(userId: string): Promise<void> {
     const unsyncedLocal = await db.workout_logs
-      .where('_synced')
-      .equals(false)
+      .filter(l => l._synced === false)
       .toArray();
 
     for (const log of unsyncedLocal) {
       const { _synced, ...logData } = log;
       const { error } = await supabase
         .from('workout_logs')
-        .upsert(logData);
+        .upsert(logData as any);
 
       if (!error) {
         await db.workout_logs.update(log.id, { _synced: true });
@@ -157,22 +145,21 @@ export class SyncService {
 
     if (remoteLogs) {
       for (const log of remoteLogs) {
-        await db.workout_logs.put({ ...log, _synced: true });
+        await db.workout_logs.put({ ...log as any, _synced: true });
       }
     }
   }
 
   private async syncWorkoutLogSets(userId: string): Promise<void> {
     const unsyncedLocal = await db.workout_log_sets
-      .where('_synced')
-      .equals(false)
+      .filter(s => s._synced === false)
       .toArray();
 
     for (const set of unsyncedLocal) {
       const { _synced, ...setData } = set;
       const { error } = await supabase
         .from('workout_log_sets')
-        .upsert(setData);
+        .upsert(setData as any);
 
       if (!error) {
         await db.workout_log_sets.update(set.id, { _synced: true });
@@ -194,7 +181,7 @@ export class SyncService {
 
       if (remoteSets) {
         for (const set of remoteSets) {
-          await db.workout_log_sets.put({ ...set, _synced: true });
+          await db.workout_log_sets.put({ ...set as any, _synced: true });
         }
       }
     }
@@ -202,15 +189,14 @@ export class SyncService {
 
   private async syncPlannedWorkouts(userId: string): Promise<void> {
     const unsyncedLocal = await db.planned_workouts
-      .where('_synced')
-      .equals(false)
+      .filter(p => p._synced === false)
       .toArray();
 
     for (const planned of unsyncedLocal) {
       const { _synced, ...plannedData } = planned;
       const { error } = await supabase
         .from('planned_workouts')
-        .upsert(plannedData);
+        .upsert(plannedData as any);
 
       if (!error) {
         await db.planned_workouts.update(planned.id, { _synced: true });
@@ -224,7 +210,7 @@ export class SyncService {
 
     if (remotePlanned) {
       for (const planned of remotePlanned) {
-        await db.planned_workouts.put({ ...planned, _synced: true });
+        await db.planned_workouts.put({ ...planned as any, _synced: true });
       }
     }
   }

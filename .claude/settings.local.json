@@ -5,7 +5,15 @@
       "Bash(node --version:*)",
       "Bash(npm --version:*)",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit: Workout Tracker V2 PWA\n\nFeatures:\n- Multi-user authentication with Supabase\n- Offline-first architecture with IndexedDB\n- Auto-sync to Supabase when online\n- Create and manage custom workouts\n- Exercise library with 12+ exercises\n- Log workout sessions with sets/reps/weight tracking\n- Workout history and progress tracking\n- Workout planning with calendar view\n- Mobile-responsive PWA with offline support\n\nTech Stack:\n- React 18 + TypeScript\n- Tailwind CSS\n- Vite + Vite PWA Plugin\n- Supabase (backend/auth/database)\n- Dexie.js (IndexedDB)\n\n🤖 Generated with Claude Code (https://claude.com/claude-code)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(gh repo create:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(npm install)",
+      "Bash(cat:*)"
     ]
   }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, WorkoutLog, Workout, WorkoutLogSet, Exercise } from '../../lib/db';
+import { db, WorkoutLog, WorkoutLogSet } from '../../lib/db';
 import { useAuth } from '../../contexts/AuthContext';
 
 export const WorkoutHistory: React.FC = () => {
