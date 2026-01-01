@@ -1,9 +1,6 @@
 -- Workout Tracker V2 - Supabase Database Schema
 -- Run this SQL in your Supabase SQL Editor to set up the database
 
--- Enable Row Level Security
-ALTER DATABASE postgres SET "app.jwt_secret" TO 'your-jwt-secret';
-
 -- Create profiles table (extends auth.users)
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
