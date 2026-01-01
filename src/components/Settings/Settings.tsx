@@ -4,7 +4,6 @@ import { useAuth } from '../../contexts/AuthContext';
 
 export const Settings: React.FC = () => {
   const { user } = useAuth();
-  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
