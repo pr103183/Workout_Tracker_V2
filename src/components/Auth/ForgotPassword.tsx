@@ -1,27 +1,33 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 
-interface LoginProps {
-  onToggleMode: () => void;
-  onForgotPassword: () => void;
+interface ForgotPasswordProps {
+  onBack: () => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ onToggleMode, onForgotPassword }) => {
+export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
 
     try {
-      await signIn(email, password);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      setSuccess('Password reset email sent! Check your inbox.');
+      setEmail('');
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in');
+      setError(err.message || 'Failed to send reset email');
     } finally {
       setLoading(false);
     }
@@ -31,13 +37,23 @@ export const Login: React.FC<LoginProps> = ({ onToggleMode, onForgotPassword }) 
     <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
       <div className="card max-w-md w-full">
         <h1 className="text-3xl font-bold text-center mb-6">Workout Tracker</h1>
-        <h2 className="text-xl font-semibold mb-4">Sign In</h2>
+        <h2 className="text-xl font-semibold mb-4">Reset Password</h2>
 
         {error && (
           <div className="bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
+
+        {success && (
+          <div className="bg-green-900/50 border border-green-700 text-green-200 px-4 py-3 rounded mb-4">
+            {success}
+          </div>
+        )}
+
+        <p className="text-gray-400 text-sm mb-4">
+          Enter your email address and we'll send you a link to reset your password.
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -50,19 +66,7 @@ export const Login: React.FC<LoginProps> = ({ onToggleMode, onForgotPassword }) 
               className="input"
               required
               autoComplete="email"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="label">Password</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input"
-              required
-              autoComplete="current-password"
+              placeholder="your@email.com"
             />
           </div>
 
@@ -71,26 +75,16 @@ export const Login: React.FC<LoginProps> = ({ onToggleMode, onForgotPassword }) 
             disabled={loading}
             className="btn btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Sending...' : 'Send Reset Link'}
           </button>
         </form>
 
-        <div className="mt-4 text-center">
-          <button
-            onClick={onForgotPassword}
-            className="text-sm text-gray-400 hover:text-gray-300"
-          >
-            Forgot password?
-          </button>
-        </div>
-
         <p className="mt-4 text-center text-gray-400">
-          Don't have an account?{' '}
           <button
-            onClick={onToggleMode}
+            onClick={onBack}
             className="text-primary-500 hover:text-primary-400"
           >
-            Sign Up
+            Back to Sign In
           </button>
         </p>
       </div>

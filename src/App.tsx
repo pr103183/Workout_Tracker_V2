@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Login } from './components/Auth/Login';
 import { Register } from './components/Auth/Register';
+import { ForgotPassword } from './components/Auth/ForgotPassword';
 import { Header } from './components/Layout/Header';
 import { Navigation } from './components/Layout/Navigation';
 import { WorkoutList } from './components/Workouts/WorkoutList';
@@ -11,6 +12,7 @@ import { ExerciseForm } from './components/Exercises/ExerciseForm';
 import { LogWorkout } from './components/WorkoutLog/LogWorkout';
 import { WorkoutHistory } from './components/History/WorkoutHistory';
 import { WorkoutPlanner } from './components/Planning/WorkoutPlanner';
+import { Settings } from './components/Settings/Settings';
 import { Workout } from './lib/db';
 
 const AuthenticatedApp: React.FC = () => {
@@ -85,6 +87,8 @@ const AuthenticatedApp: React.FC = () => {
         {activeTab === 'history' && <WorkoutHistory />}
 
         {activeTab === 'plan' && <WorkoutPlanner />}
+
+        {activeTab === 'settings' && <Settings />}
       </main>
     </div>
   );
@@ -92,11 +96,19 @@ const AuthenticatedApp: React.FC = () => {
 
 const UnauthenticatedApp: React.FC = () => {
   const [showRegister, setShowRegister] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  if (showForgotPassword) {
+    return <ForgotPassword onBack={() => setShowForgotPassword(false)} />;
+  }
 
   return showRegister ? (
     <Register onToggleMode={() => setShowRegister(false)} />
   ) : (
-    <Login onToggleMode={() => setShowRegister(true)} />
+    <Login
+      onToggleMode={() => setShowRegister(true)}
+      onForgotPassword={() => setShowForgotPassword(true)}
+    />
   );
 };
 
