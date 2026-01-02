@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, WorkoutLog, WorkoutLogSet } from '../../lib/db';
 import { useAuth } from '../../contexts/AuthContext';
@@ -6,7 +6,6 @@ import { useAuth } from '../../contexts/AuthContext';
 export const WorkoutHistory: React.FC = () => {
   const { user } = useAuth();
   const [selectedLog, setSelectedLog] = useState<WorkoutLog | null>(null);
-  const [logSets, setLogSets] = useState<WorkoutLogSet[]>([]);
   const [editingSet, setEditingSet] = useState<WorkoutLogSet | null>(null);
   const [editWeight, setEditWeight] = useState<number>(0);
   const [editReps, setEditReps] = useState<number>(0);
@@ -35,15 +34,17 @@ export const WorkoutHistory: React.FC = () => {
     [user?.id]
   );
 
-  useEffect(() => {
-    if (selectedLog) {
-      db.workout_log_sets
+  // Use useLiveQuery for logSets to get reactive updates
+  const logSets = useLiveQuery(
+    () => {
+      if (!selectedLog) return [];
+      return db.workout_log_sets
         .where('workout_log_id')
         .equals(selectedLog.id)
-        .toArray()
-        .then(setLogSets);
-    }
-  }, [selectedLog]);
+        .toArray();
+    },
+    [selectedLog?.id]
+  );
 
   const getWorkoutName = (workoutId: string) => {
     return workouts?.find(w => w.id === workoutId)?.name || 'Unknown Workout';
@@ -105,14 +106,9 @@ export const WorkoutHistory: React.FC = () => {
       _synced: false,
     });
 
-    // Refresh the sets
-    const updatedSets = await db.workout_log_sets
-      .where('workout_log_id')
-      .equals(selectedLog!.id)
-      .toArray();
-    setLogSets(updatedSets);
+    // useLiveQuery will automatically refresh the sets
     setEditingSet(null);
-  }, [editingSet, editWeight, editReps, selectedLog]);
+  }, [editingSet, editWeight, editReps]);
 
   const handleCancelEdit = useCallback(() => {
     setEditingSet(null);
@@ -123,15 +119,9 @@ export const WorkoutHistory: React.FC = () => {
   const handleDeleteSet = useCallback(async (set: WorkoutLogSet) => {
     if (confirm(`Delete this set (${set.reps} reps × ${set.weight} lbs)?`)) {
       await db.workout_log_sets.delete(set.id);
-
-      // Refresh the sets
-      const updatedSets = await db.workout_log_sets
-        .where('workout_log_id')
-        .equals(selectedLog!.id)
-        .toArray();
-      setLogSets(updatedSets);
+      // useLiveQuery will automatically refresh the sets
     }
-  }, [selectedLog]);
+  }, []);
 
   if (!logs) {
     return <div className="text-center py-8">Loading history...</div>;
@@ -216,14 +206,14 @@ export const WorkoutHistory: React.FC = () => {
                   <div>
                     <div className="label">Total Volume</div>
                     <div className="text-white text-2xl font-bold">
-                      {getTotalVolume(logSets).toLocaleString()} lbs
+                      {getTotalVolume(logSets || []).toLocaleString()} lbs
                     </div>
                   </div>
 
                   <div>
                     <div className="label">Exercises</div>
                     <div className="space-y-3 mt-2">
-                      {Object.entries(groupSetsByExercise(logSets)).map(([exerciseId, sets]) => (
+                      {Object.entries(groupSetsByExercise(logSets || [])).map(([exerciseId, sets]) => (
                         <div key={exerciseId} className="bg-gray-700 p-3 rounded-lg">
                           <h4 className="font-medium mb-2">{getExerciseName(exerciseId)}</h4>
                           <div className="space-y-2">
