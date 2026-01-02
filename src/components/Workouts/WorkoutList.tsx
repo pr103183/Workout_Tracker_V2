@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Workout } from '../../lib/db';
 import { useAuth } from '../../contexts/AuthContext';
@@ -10,11 +10,39 @@ interface WorkoutListProps {
 
 export const WorkoutList: React.FC<WorkoutListProps> = ({ onSelectWorkout, onCreateWorkout }) => {
   const { user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'date'>('name');
 
   const workouts = useLiveQuery(
     () => db.workouts.where('user_id').equals(user?.id || '').toArray(),
     [user?.id]
   );
+
+  const filteredAndSortedWorkouts = useMemo(() => {
+    if (!workouts) return [];
+
+    let filtered = workouts;
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(workout =>
+        workout.name.toLowerCase().includes(query) ||
+        workout.description?.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      if (sortBy === 'name') {
+        return a.name.localeCompare(b.name);
+      } else {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+    return filtered;
+  }, [workouts, searchQuery, sortBy]);
 
   const handleDeleteWorkout = useCallback(async (workoutId: string, workoutName: string) => {
     if (confirm(`Are you sure you want to delete "${workoutName}"? This will also delete all associated workout logs.`)) {
@@ -49,16 +77,53 @@ export const WorkoutList: React.FC<WorkoutListProps> = ({ onSelectWorkout, onCre
         </button>
       </div>
 
-      {workouts.length === 0 ? (
+      {workouts && workouts.length > 0 && (
+        <div className="card mb-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search workouts by name or description..."
+                className="input w-full"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSortBy('name')}
+                className={`btn text-sm ${sortBy === 'name' ? 'btn-primary' : 'btn-secondary'}`}
+              >
+                Sort by Name
+              </button>
+              <button
+                onClick={() => setSortBy('date')}
+                className={`btn text-sm ${sortBy === 'date' ? 'btn-primary' : 'btn-secondary'}`}
+              >
+                Sort by Date
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!workouts || workouts.length === 0 ? (
         <div className="card text-center py-12">
           <p className="text-gray-400 mb-4">No workouts yet</p>
           <button onClick={onCreateWorkout} className="btn btn-primary">
             Create Your First Workout
           </button>
         </div>
+      ) : filteredAndSortedWorkouts.length === 0 ? (
+        <div className="card text-center py-12">
+          <p className="text-gray-400 mb-4">No workouts match your search</p>
+          <button onClick={() => setSearchQuery('')} className="btn btn-secondary">
+            Clear Search
+          </button>
+        </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {workouts.map((workout, index) => (
+          {filteredAndSortedWorkouts.map((workout, index) => (
             <div
               key={workout.id}
               className="card card-hover stagger-item"

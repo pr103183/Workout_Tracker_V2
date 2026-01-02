@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, WorkoutLog, WorkoutLogSet } from '../../lib/db';
 import { useAuth } from '../../contexts/AuthContext';
@@ -9,6 +9,9 @@ export const WorkoutHistory: React.FC = () => {
   const [editingSet, setEditingSet] = useState<WorkoutLogSet | null>(null);
   const [editWeight, setEditWeight] = useState<number>(0);
   const [editReps, setEditReps] = useState<number>(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterWorkout, setFilterWorkout] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<'all' | 'week' | 'month' | 'year'>('all');
 
   const logs = useLiveQuery(
     async () => {
@@ -122,6 +125,50 @@ export const WorkoutHistory: React.FC = () => {
     setEditReps(0);
   }, []);
 
+  const filteredLogs = useMemo(() => {
+    if (!logs) return [];
+
+    let filtered = logs;
+
+    // Apply workout filter
+    if (filterWorkout !== 'all') {
+      filtered = filtered.filter(log => log.workout_id === filterWorkout);
+    }
+
+    // Apply date filter
+    if (dateFilter !== 'all') {
+      const now = new Date();
+      const cutoffDate = new Date();
+
+      switch (dateFilter) {
+        case 'week':
+          cutoffDate.setDate(now.getDate() - 7);
+          break;
+        case 'month':
+          cutoffDate.setMonth(now.getMonth() - 1);
+          break;
+        case 'year':
+          cutoffDate.setFullYear(now.getFullYear() - 1);
+          break;
+      }
+
+      filtered = filtered.filter(log =>
+        new Date(log.completed_at!) >= cutoffDate
+      );
+    }
+
+    // Apply search filter (search in notes)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(log =>
+        log.notes?.toLowerCase().includes(query) ||
+        getWorkoutName(log.workout_id).toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [logs, filterWorkout, dateFilter, searchQuery, workouts]);
+
   const handleDeleteSet = useCallback(async (set: WorkoutLogSet) => {
     if (confirm(`Delete this set (${set.reps} reps × ${set.weight} lbs)?`)) {
       await db.workout_log_sets.delete(set.id);
@@ -137,14 +184,73 @@ export const WorkoutHistory: React.FC = () => {
     <div className="container mx-auto px-4 py-6">
       <h2 className="text-2xl font-bold mb-6">Workout History</h2>
 
-      {logs.length === 0 ? (
+      {logs && logs.length > 0 && (
+        <div className="card mb-6">
+          <div className="space-y-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by workout name or notes..."
+                  className="input w-full"
+                />
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <select
+                  value={filterWorkout}
+                  onChange={(e) => setFilterWorkout(e.target.value)}
+                  className="input text-sm"
+                >
+                  <option value="all">All Workouts</option>
+                  {workouts?.map(workout => (
+                    <option key={workout.id} value={workout.id}>{workout.name}</option>
+                  ))}
+                </select>
+                <select
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value as 'all' | 'week' | 'month' | 'year')}
+                  className="input text-sm"
+                >
+                  <option value="all">All Time</option>
+                  <option value="week">Past Week</option>
+                  <option value="month">Past Month</option>
+                  <option value="year">Past Year</option>
+                </select>
+              </div>
+            </div>
+            {(searchQuery || filterWorkout !== 'all' || dateFilter !== 'all') && (
+              <div className="text-sm text-gray-400">
+                Showing {filteredLogs.length} of {logs.length} workouts
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!logs || logs.length === 0 ? (
         <div className="card text-center py-12">
           <p className="text-gray-400">No workout history yet. Log your first workout!</p>
+        </div>
+      ) : filteredLogs.length === 0 ? (
+        <div className="card text-center py-12">
+          <p className="text-gray-400 mb-4">No workouts match your filters</p>
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              setFilterWorkout('all');
+              setDateFilter('all');
+            }}
+            className="btn btn-secondary"
+          >
+            Clear Filters
+          </button>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-3">
-            {logs.map((log) => (
+            {filteredLogs.map((log) => (
               <div
                 key={log.id}
                 onClick={() => setSelectedLog(log)}
