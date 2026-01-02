@@ -16,7 +16,10 @@
       "Bash(cat:*)",
       "Bash(npm run build:*)",
       "Bash(vercel:*)",
-      "Bash(del NUL)"
+      "Bash(del NUL)",
+      "Bash(npm install:*)",
+      "Bash(git checkout:*)",
+      "Bash(bash:*)"
     ]
   }
 }
