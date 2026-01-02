@@ -6,9 +6,10 @@ import { defaultExercises } from '../../lib/defaultExercises';
 
 interface ExerciseListProps {
   onCreateExercise: () => void;
+  onEditExercise: (exercise: Exercise) => void;
 }
 
-export const ExerciseList: React.FC<ExerciseListProps> = ({ onCreateExercise }) => {
+export const ExerciseList: React.FC<ExerciseListProps> = ({ onCreateExercise, onEditExercise }) => {
   const { user } = useAuth();
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [filter, setFilter] = useState('All');
@@ -131,12 +132,20 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({ onCreateExercise }) 
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-xl font-bold">{selectedExercise.name}</h3>
                 {selectedExercise.is_custom && (
-                  <button
-                    onClick={() => handleDeleteExercise(selectedExercise.id)}
-                    className="btn btn-danger text-sm"
-                  >
-                    Delete
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => onEditExercise(selectedExercise)}
+                      className="btn btn-primary text-sm px-4 py-2"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteExercise(selectedExercise.id)}
+                      className="btn bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 )}
               </div>
 

@@ -14,13 +14,14 @@ import { WorkoutHistory } from './components/History/WorkoutHistory';
 import { WorkoutPlanner } from './components/Planning/WorkoutPlanner';
 import { Settings } from './components/Settings/Settings';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { Workout } from './lib/db';
+import { Workout, Exercise } from './lib/db';
 
 const AuthenticatedApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState('workouts');
   const [showWorkoutForm, setShowWorkoutForm] = useState(false);
   const [editingWorkout, setEditingWorkout] = useState<Workout | undefined>(undefined);
   const [showExerciseForm, setShowExerciseForm] = useState(false);
+  const [editingExercise, setEditingExercise] = useState<Exercise | undefined>(undefined);
 
   const handleCreateWorkout = useCallback(() => {
     setEditingWorkout(undefined);
@@ -43,15 +44,23 @@ const AuthenticatedApp: React.FC = () => {
   }, []);
 
   const handleCreateExercise = useCallback(() => {
+    setEditingExercise(undefined);
+    setShowExerciseForm(true);
+  }, []);
+
+  const handleEditExercise = useCallback((exercise: Exercise) => {
+    setEditingExercise(exercise);
     setShowExerciseForm(true);
   }, []);
 
   const handleSaveExercise = useCallback(() => {
     setShowExerciseForm(false);
+    setEditingExercise(undefined);
   }, []);
 
   const handleCancelExercise = useCallback(() => {
     setShowExerciseForm(false);
+    setEditingExercise(undefined);
   }, []);
 
   return (
@@ -77,11 +86,18 @@ const AuthenticatedApp: React.FC = () => {
         )}
 
         {activeTab === 'exercises' && !showExerciseForm && (
-          <ExerciseList onCreateExercise={handleCreateExercise} />
+          <ExerciseList
+            onCreateExercise={handleCreateExercise}
+            onEditExercise={handleEditExercise}
+          />
         )}
 
         {activeTab === 'exercises' && showExerciseForm && (
-          <ExerciseForm onSave={handleSaveExercise} onCancel={handleCancelExercise} />
+          <ExerciseForm
+            exercise={editingExercise}
+            onSave={handleSaveExercise}
+            onCancel={handleCancelExercise}
+          />
         )}
 
         {activeTab === 'log' && <LogWorkout />}
