@@ -18,8 +18,14 @@ export const WorkoutHistory: React.FC = () => {
     [user?.id]
   );
 
-  const workouts = useLiveQuery(() => db.workouts.toArray());
-  const exercises = useLiveQuery(() => db.exercises.toArray());
+  const workouts = useLiveQuery(
+    () => db.workouts.where('user_id').equals(user?.id || '').toArray(),
+    [user?.id]
+  );
+  const exercises = useLiveQuery(
+    () => db.exercises.where('user_id').equals(user?.id || '').toArray(),
+    [user?.id]
+  );
 
   useEffect(() => {
     if (selectedLog) {

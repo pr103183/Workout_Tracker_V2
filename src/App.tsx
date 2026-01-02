@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Login } from './components/Auth/Login';
 import { Register } from './components/Auth/Register';
@@ -13,6 +13,7 @@ import { LogWorkout } from './components/WorkoutLog/LogWorkout';
 import { WorkoutHistory } from './components/History/WorkoutHistory';
 import { WorkoutPlanner } from './components/Planning/WorkoutPlanner';
 import { Settings } from './components/Settings/Settings';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Workout } from './lib/db';
 
 const AuthenticatedApp: React.FC = () => {
@@ -21,44 +22,45 @@ const AuthenticatedApp: React.FC = () => {
   const [editingWorkout, setEditingWorkout] = useState<Workout | undefined>(undefined);
   const [showExerciseForm, setShowExerciseForm] = useState(false);
 
-  const handleCreateWorkout = () => {
+  const handleCreateWorkout = useCallback(() => {
     setEditingWorkout(undefined);
     setShowWorkoutForm(true);
-  };
+  }, []);
 
-  const handleEditWorkout = (workout: Workout) => {
+  const handleEditWorkout = useCallback((workout: Workout) => {
     setEditingWorkout(workout);
     setShowWorkoutForm(true);
-  };
+  }, []);
 
-  const handleSaveWorkout = () => {
+  const handleSaveWorkout = useCallback(() => {
     setShowWorkoutForm(false);
     setEditingWorkout(undefined);
-  };
+  }, []);
 
-  const handleCancelWorkout = () => {
+  const handleCancelWorkout = useCallback(() => {
     setShowWorkoutForm(false);
     setEditingWorkout(undefined);
-  };
+  }, []);
 
-  const handleCreateExercise = () => {
+  const handleCreateExercise = useCallback(() => {
     setShowExerciseForm(true);
-  };
+  }, []);
 
-  const handleSaveExercise = () => {
+  const handleSaveExercise = useCallback(() => {
     setShowExerciseForm(false);
-  };
+  }, []);
 
-  const handleCancelExercise = () => {
+  const handleCancelExercise = useCallback(() => {
     setShowExerciseForm(false);
-  };
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Header />
-      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gray-900">
+        <Header />
+        <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <main>
+        <main role="main" aria-label="Main content">
         {activeTab === 'workouts' && !showWorkoutForm && (
           <WorkoutList
             onSelectWorkout={handleEditWorkout}
@@ -88,9 +90,10 @@ const AuthenticatedApp: React.FC = () => {
 
         {activeTab === 'plan' && <WorkoutPlanner />}
 
-        {activeTab === 'settings' && <Settings />}
-      </main>
-    </div>
+          {activeTab === 'settings' && <Settings />}
+        </main>
+      </div>
+    </ErrorBoundary>
   );
 };
 

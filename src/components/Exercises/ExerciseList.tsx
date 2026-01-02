@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Exercise } from '../../lib/db';
 import { useAuth } from '../../contexts/AuthContext';
@@ -47,18 +47,22 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({ onCreateExercise }) 
     initializeDefaultExercises();
   }, [user]);
 
-  const muscleGroups = ['All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'];
-
-  const filteredExercises = exercises?.filter(
-    (ex) => filter === 'All' || ex.muscle_group === filter
+  const muscleGroups = useMemo(
+    () => ['All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'],
+    []
   );
 
-  const handleDeleteExercise = async (id: string) => {
+  const filteredExercises = useMemo(
+    () => exercises?.filter((ex) => filter === 'All' || ex.muscle_group === filter),
+    [exercises, filter]
+  );
+
+  const handleDeleteExercise = useCallback(async (id: string) => {
     if (confirm('Are you sure you want to delete this exercise?')) {
       await db.exercises.delete(id);
       setSelectedExercise(null);
     }
-  };
+  }, []);
 
   return (
     <div className="container mx-auto px-4 py-6">
