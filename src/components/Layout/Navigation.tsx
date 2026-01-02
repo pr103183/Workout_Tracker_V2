@@ -11,6 +11,7 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }
     { id: 'exercises', label: 'Exercises', icon: '🏋️' },
     { id: 'log', label: 'Log Workout', icon: '📝' },
     { id: 'history', label: 'History', icon: '📊' },
+    { id: 'progress', label: 'Progress', icon: '📈' },
     { id: 'plan', label: 'Plan', icon: '📅' },
     { id: 'settings', label: 'Settings', icon: '⚙️' },
   ];
