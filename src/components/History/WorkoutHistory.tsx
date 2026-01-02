@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, WorkoutLog, WorkoutLogSet } from '../../lib/db';
 import { useAuth } from '../../contexts/AuthContext';
@@ -7,6 +7,9 @@ export const WorkoutHistory: React.FC = () => {
   const { user } = useAuth();
   const [selectedLog, setSelectedLog] = useState<WorkoutLog | null>(null);
   const [logSets, setLogSets] = useState<WorkoutLogSet[]>([]);
+  const [editingSet, setEditingSet] = useState<WorkoutLogSet | null>(null);
+  const [editWeight, setEditWeight] = useState<number>(0);
+  const [editReps, setEditReps] = useState<number>(0);
 
   const logs = useLiveQuery(
     () =>
@@ -67,6 +70,64 @@ export const WorkoutHistory: React.FC = () => {
     return grouped;
   };
 
+  const handleDeleteWorkout = useCallback(async (log: WorkoutLog) => {
+    const workoutName = getWorkoutName(log.workout_id);
+    if (confirm(`Are you sure you want to delete this workout "${workoutName}" from ${new Date(log.started_at).toLocaleDateString()}?`)) {
+      // Delete all sets for this workout log
+      await db.workout_log_sets.where('workout_log_id').equals(log.id).delete();
+      // Delete the workout log
+      await db.workout_logs.delete(log.id);
+      // Clear selection if this was the selected log
+      if (selectedLog?.id === log.id) {
+        setSelectedLog(null);
+      }
+    }
+  }, [selectedLog]);
+
+  const handleEditSet = useCallback((set: WorkoutLogSet) => {
+    setEditingSet(set);
+    setEditWeight(set.weight);
+    setEditReps(set.reps);
+  }, []);
+
+  const handleSaveSet = useCallback(async () => {
+    if (!editingSet) return;
+
+    await db.workout_log_sets.update(editingSet.id, {
+      weight: editWeight,
+      reps: editReps,
+      updated_at: new Date().toISOString(),
+      _synced: false,
+    });
+
+    // Refresh the sets
+    const updatedSets = await db.workout_log_sets
+      .where('workout_log_id')
+      .equals(selectedLog!.id)
+      .toArray();
+    setLogSets(updatedSets);
+    setEditingSet(null);
+  }, [editingSet, editWeight, editReps, selectedLog]);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingSet(null);
+    setEditWeight(0);
+    setEditReps(0);
+  }, []);
+
+  const handleDeleteSet = useCallback(async (set: WorkoutLogSet) => {
+    if (confirm(`Delete this set (${set.reps} reps × ${set.weight} lbs)?`)) {
+      await db.workout_log_sets.delete(set.id);
+
+      // Refresh the sets
+      const updatedSets = await db.workout_log_sets
+        .where('workout_log_id')
+        .equals(selectedLog!.id)
+        .toArray();
+      setLogSets(updatedSets);
+    }
+  }, [selectedLog]);
+
   if (!logs) {
     return <div className="text-center py-8">Loading history...</div>;
   }
@@ -119,14 +180,24 @@ export const WorkoutHistory: React.FC = () => {
           <div className="sticky top-32">
             {selectedLog ? (
               <div className="card">
-                <h3 className="text-xl font-bold mb-2">{getWorkoutName(selectedLog.workout_id)}</h3>
-                <div className="text-sm text-gray-400 mb-4">
-                  {new Date(selectedLog.started_at).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">{getWorkoutName(selectedLog.workout_id)}</h3>
+                    <div className="text-sm text-gray-400">
+                      {new Date(selectedLog.started_at).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteWorkout(selectedLog)}
+                    className="btn bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2"
+                  >
+                    Delete Workout
+                  </button>
                 </div>
 
                 <div className="space-y-4">
@@ -150,14 +221,79 @@ export const WorkoutHistory: React.FC = () => {
                       {Object.entries(groupSetsByExercise(logSets)).map(([exerciseId, sets]) => (
                         <div key={exerciseId} className="bg-gray-700 p-3 rounded-lg">
                           <h4 className="font-medium mb-2">{getExerciseName(exerciseId)}</h4>
-                          <div className="space-y-1">
-                            {sets.map((set, idx) => (
-                              <div key={idx} className="text-sm text-gray-300 flex justify-between">
-                                <span>Set {set.set_number}</span>
-                                <span>
-                                  {set.reps} reps × {set.weight} lbs
-                                  {set.completed && <span className="text-green-500 ml-2">✓</span>}
-                                </span>
+                          <div className="space-y-2">
+                            {sets.map((set) => (
+                              <div key={set.id}>
+                                {editingSet?.id === set.id ? (
+                                  <div className="bg-gray-800 p-2 rounded space-y-2">
+                                    <div className="text-sm font-medium text-gray-300">
+                                      Editing Set {set.set_number}
+                                    </div>
+                                    <div className="flex gap-2 items-center">
+                                      <div className="flex-1">
+                                        <input
+                                          type="number"
+                                          value={editReps}
+                                          onChange={(e) => setEditReps(Number(e.target.value))}
+                                          className="input w-full text-sm"
+                                          placeholder="Reps"
+                                          min="0"
+                                        />
+                                      </div>
+                                      <span className="text-gray-400">×</span>
+                                      <div className="flex-1">
+                                        <input
+                                          type="number"
+                                          value={editWeight}
+                                          onChange={(e) => setEditWeight(Number(e.target.value))}
+                                          className="input w-full text-sm"
+                                          placeholder="Weight"
+                                          min="0"
+                                          step="5"
+                                        />
+                                      </div>
+                                      <span className="text-gray-400 text-sm">lbs</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <button
+                                        onClick={handleSaveSet}
+                                        className="btn btn-primary text-xs px-3 py-1 flex-1"
+                                      >
+                                        Save
+                                      </button>
+                                      <button
+                                        onClick={handleCancelEdit}
+                                        className="btn btn-secondary text-xs px-3 py-1 flex-1"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex justify-between items-center group">
+                                    <div className="text-sm text-gray-300 flex-1">
+                                      <span>Set {set.set_number}</span>
+                                      <span className="ml-4">
+                                        {set.reps} reps × {set.weight} lbs
+                                        {set.completed && <span className="text-green-500 ml-2">✓</span>}
+                                      </span>
+                                    </div>
+                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <button
+                                        onClick={() => handleEditSet(set)}
+                                        className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1"
+                                      >
+                                        Edit
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteSet(set)}
+                                        className="text-red-400 hover:text-red-300 text-xs px-2 py-1"
+                                      >
+                                        Delete
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
