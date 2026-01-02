@@ -36,6 +36,10 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({ onCreateExercise, on
           description: ex.description || '',
           equipment: ex.equipment || '',
           instructions: ex.instructions || '',
+          form_cues: ex.form_cues || '',
+          common_mistakes: ex.common_mistakes || '',
+          muscle_activation: ex.muscle_activation || '',
+          safety_tips: ex.safety_tips || '',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           _synced: false,
@@ -171,6 +175,60 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({ onCreateExercise, on
                     <h4 className="label">Instructions</h4>
                     <div className="text-white whitespace-pre-line bg-gray-900 p-4 rounded-lg">
                       {selectedExercise.instructions}
+                    </div>
+                  </div>
+                )}
+
+                {(selectedExercise.form_cues ||
+                  selectedExercise.common_mistakes ||
+                  selectedExercise.muscle_activation ||
+                  selectedExercise.safety_tips) && (
+                  <div className="border-t border-gray-700 pt-4 mt-4">
+                    <h4 className="text-lg font-semibold mb-3 text-primary-400">Form Guide</h4>
+                    <div className="space-y-3">
+                      {selectedExercise.form_cues && (
+                        <div className="bg-blue-900/20 border border-blue-700/30 p-4 rounded-lg">
+                          <h5 className="label text-blue-400 flex items-center gap-2 mb-2">
+                            <span>✓</span> Form Cues
+                          </h5>
+                          <p className="text-white whitespace-pre-line text-sm">
+                            {selectedExercise.form_cues}
+                          </p>
+                        </div>
+                      )}
+
+                      {selectedExercise.common_mistakes && (
+                        <div className="bg-yellow-900/20 border border-yellow-700/30 p-4 rounded-lg">
+                          <h5 className="label text-yellow-400 flex items-center gap-2 mb-2">
+                            <span>⚠</span> Common Mistakes
+                          </h5>
+                          <p className="text-white whitespace-pre-line text-sm">
+                            {selectedExercise.common_mistakes}
+                          </p>
+                        </div>
+                      )}
+
+                      {selectedExercise.muscle_activation && (
+                        <div className="bg-purple-900/20 border border-purple-700/30 p-4 rounded-lg">
+                          <h5 className="label text-purple-400 flex items-center gap-2 mb-2">
+                            <span>💪</span> Muscle Activation
+                          </h5>
+                          <p className="text-white whitespace-pre-line text-sm">
+                            {selectedExercise.muscle_activation}
+                          </p>
+                        </div>
+                      )}
+
+                      {selectedExercise.safety_tips && (
+                        <div className="bg-red-900/20 border border-red-700/30 p-4 rounded-lg">
+                          <h5 className="label text-red-400 flex items-center gap-2 mb-2">
+                            <span>🛡️</span> Safety Tips
+                          </h5>
+                          <p className="text-white whitespace-pre-line text-sm">
+                            {selectedExercise.safety_tips}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

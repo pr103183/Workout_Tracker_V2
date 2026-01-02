@@ -16,6 +16,10 @@ export interface Exercise {
   muscle_group: string;
   equipment?: string;
   instructions?: string;
+  form_cues?: string;
+  common_mistakes?: string;
+  muscle_activation?: string;
+  safety_tips?: string;
   is_custom: boolean;
   created_at: string;
   updated_at: string;

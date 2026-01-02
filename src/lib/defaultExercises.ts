@@ -5,6 +5,10 @@ export const defaultExercises = [
     muscle_group: 'Chest',
     equipment: 'Barbell',
     instructions: '1. Lie on bench with feet flat on floor\n2. Grip bar slightly wider than shoulder width\n3. Lower bar to chest with control\n4. Press bar up until arms are extended\n5. Keep shoulder blades retracted throughout',
+    form_cues: 'Keep shoulder blades pinned back and down\nMaintain natural arch in lower back\nDrive feet into floor for stability\nBar path should be slightly diagonal, not straight up and down',
+    common_mistakes: 'Bouncing bar off chest\nFlaring elbows out too wide (keep at 45-75 degrees)\nLifting hips off bench\nNot using full range of motion',
+    muscle_activation: 'Focus on squeezing chest muscles together at the top\nFeel the stretch in pecs at the bottom\nThink about pushing yourself away from the bar, not just pushing the bar up',
+    safety_tips: 'Always use a spotter when lifting heavy\nUse safety bars or clips on the barbell\nWarm up with lighter weights first\nDon\'t lock out elbows aggressively',
     is_custom: false,
   },
   {
@@ -13,6 +17,10 @@ export const defaultExercises = [
     muscle_group: 'Legs',
     equipment: 'Barbell',
     instructions: '1. Position bar on upper back\n2. Stand with feet shoulder-width apart\n3. Descend by bending knees and hips\n4. Go down until thighs are parallel to floor\n5. Drive through heels to stand up',
+    form_cues: 'Keep chest up and core braced throughout\nKnees should track over toes, not cave inward\nMaintain neutral spine - don\'t round lower back\nBreak at hips and knees simultaneously',
+    common_mistakes: 'Knees caving inward (valgus collapse)\nRising hips faster than chest (good morning squat)\nNot reaching proper depth\nHeels lifting off ground',
+    muscle_activation: 'Feel the tension in quads on the way down\nEngage glutes and drive through heels on the way up\nKeep core tight to protect spine',
+    safety_tips: 'Use squat rack with safety bars\nWarm up thoroughly and start light\nConsider using a belt for heavy sets\nBail safely if you can\'t complete the rep',
     is_custom: false,
   },
   {
@@ -21,6 +29,10 @@ export const defaultExercises = [
     muscle_group: 'Back',
     equipment: 'Barbell',
     instructions: '1. Stand with feet hip-width apart, bar over mid-foot\n2. Bend down and grip bar\n3. Keep back straight, chest up\n4. Drive through heels, extend hips and knees\n5. Stand tall, then lower with control',
+    form_cues: 'Bar should travel in straight vertical line\nKeep bar close to shins and thighs\nChest up, shoulders slightly in front of bar at start\nEngage lats by pulling bar into shins before lifting',
+    common_mistakes: 'Rounding lower back\nBar drifting away from body\nStarting with hips too low or too high\nJerking the weight off the floor',
+    muscle_activation: 'Feel the load in your hamstrings and glutes at the bottom\nEngage entire posterior chain - glutes, hamstrings, back\nSqueeze glutes hard at the top',
+    safety_tips: 'Never round your lower back under load\nUse mixed grip or straps if grip fails before back\nDrop the weight if form breaks down\nConsider using lifting belt for maximal attempts',
     is_custom: false,
   },
   {
