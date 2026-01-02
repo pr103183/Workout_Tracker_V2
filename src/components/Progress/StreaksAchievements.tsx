@@ -269,8 +269,12 @@ export const StreaksAchievements: React.FC = () => {
             Unlocked Achievements ({unlockedAchievements.length}/{achievements.length})
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {unlockedAchievements.map(achievement => (
-              <div key={achievement.id} className="card bg-gradient-to-br from-primary-500/10 to-primary-600/10">
+            {unlockedAchievements.map((achievement, index) => (
+              <div
+                key={achievement.id}
+                className="card bg-gradient-to-br from-primary-500/10 to-primary-600/10 achievement-unlock stagger-item"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
                 <div className="flex items-start gap-3">
                   <div className="text-4xl">{achievement.icon}</div>
                   <div className="flex-1">

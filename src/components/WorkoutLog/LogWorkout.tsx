@@ -175,6 +175,13 @@ export const LogWorkout: React.FC = () => {
       _synced: false,
     });
 
+    // Add celebration effect
+    const finishButton = document.querySelector('.finish-workout-btn');
+    if (finishButton) {
+      finishButton.classList.add('celebrate');
+      setTimeout(() => finishButton.classList.remove('celebrate'), 600);
+    }
+
     alert('Workout completed! Great job!');
     setSelectedWorkout(null);
     setCurrentLog(null);
@@ -329,10 +336,10 @@ export const LogWorkout: React.FC = () => {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">{selectedWorkout?.name}</h2>
           <div className="flex gap-2">
-            <button onClick={handleCancelWorkout} className="btn btn-secondary text-sm">
+            <button onClick={handleCancelWorkout} className="btn btn-secondary text-sm ripple">
               Cancel
             </button>
-            <button onClick={handleFinishWorkout} className="btn btn-primary text-sm">
+            <button onClick={handleFinishWorkout} className="btn btn-primary text-sm ripple finish-workout-btn">
               Finish
             </button>
           </div>
@@ -391,8 +398,8 @@ export const LogWorkout: React.FC = () => {
                     return (
                       <div
                         key={set.id}
-                        className={`p-3 rounded-lg ${
-                          set.completed ? 'bg-green-900/30 border border-green-700' : 'bg-gray-700'
+                        className={`p-3 rounded-lg transition-all ${
+                          set.completed ? 'bg-green-900/30 border border-green-700 set-complete' : 'bg-gray-700'
                         }`}
                       >
                         <div className="flex items-center gap-3">

@@ -168,30 +168,30 @@ export const ProgressDashboard: React.FC = () => {
 
       {/* Stats Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="card">
+        <div className="card stagger-item" style={{ animationDelay: '0s' }}>
           <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Total Workouts</div>
-          <div className="text-3xl font-bold text-primary-500">{filteredLogs.length}</div>
+          <div className="text-3xl font-bold text-primary-500 stat-value">{filteredLogs.length}</div>
         </div>
-        <div className="card">
+        <div className="card stagger-item" style={{ animationDelay: '0.1s' }}>
           <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Total Sets</div>
-          <div className="text-3xl font-bold text-primary-500">{filteredSets.length}</div>
+          <div className="text-3xl font-bold text-primary-500 stat-value">{filteredSets.length}</div>
         </div>
-        <div className="card">
+        <div className="card stagger-item" style={{ animationDelay: '0.2s' }}>
           <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Total Volume</div>
-          <div className="text-3xl font-bold text-primary-500">
+          <div className="text-3xl font-bold text-primary-500 stat-value">
             {filteredSets.reduce((sum, s) => sum + (s.weight || 0) * (s.reps || 0), 0).toLocaleString()} lbs
           </div>
         </div>
-        <div className="card">
+        <div className="card stagger-item" style={{ animationDelay: '0.3s' }}>
           <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Exercises Tracked</div>
-          <div className="text-3xl font-bold text-primary-500">
+          <div className="text-3xl font-bold text-primary-500 stat-value">
             {new Set(filteredSets.map(s => s.exercise_id)).size}
           </div>
         </div>
       </div>
 
       {/* Volume Over Time */}
-      <div className="card mb-6">
+      <div className="card mb-6 animate-fade-in">
         <h3 className="text-lg font-semibold mb-4">Total Volume Over Time</h3>
         {volumeOverTimeData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
@@ -213,7 +213,7 @@ export const ProgressDashboard: React.FC = () => {
       </div>
 
       {/* Exercise Progress */}
-      <div className="card mb-6">
+      <div className="card mb-6 animate-fade-in">
         <h3 className="text-lg font-semibold mb-4">Exercise Progress</h3>
         <select
           value={selectedExerciseId}

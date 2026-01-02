@@ -58,10 +58,11 @@ export const WorkoutList: React.FC<WorkoutListProps> = ({ onSelectWorkout, onCre
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {workouts.map((workout) => (
+          {workouts.map((workout, index) => (
             <div
               key={workout.id}
-              className="card hover:bg-gray-700 transition-colors"
+              className="card card-hover stagger-item"
+              style={{ animationDelay: `${index * 0.05}s` }}
             >
               <h3 className="text-xl font-semibold mb-2">{workout.name}</h3>
               {workout.description && (
