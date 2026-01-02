@@ -12,12 +12,17 @@ export const WorkoutHistory: React.FC = () => {
   const [editReps, setEditReps] = useState<number>(0);
 
   const logs = useLiveQuery(
-    () =>
-      db.workout_logs
+    async () => {
+      const allLogs = await db.workout_logs
         .where('user_id')
         .equals(user?.id || '')
-        .reverse()
-        .sortBy('started_at'),
+        .toArray();
+
+      // Filter to only completed workouts and sort by completion date (most recent first)
+      return allLogs
+        .filter(log => log.completed_at !== null)
+        .sort((a, b) => new Date(b.completed_at!).getTime() - new Date(a.completed_at!).getTime());
+    },
     [user?.id]
   );
 
@@ -82,7 +87,7 @@ export const WorkoutHistory: React.FC = () => {
         setSelectedLog(null);
       }
     }
-  }, [selectedLog]);
+  }, [selectedLog, workouts]);
 
   const handleEditSet = useCallback((set: WorkoutLogSet) => {
     setEditingSet(set);

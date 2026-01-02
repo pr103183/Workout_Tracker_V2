@@ -24,15 +24,63 @@ export const LogWorkout: React.FC = () => {
     [user?.id]
   );
 
+  // Check for in-progress workout on mount
   useEffect(() => {
-    if (selectedWorkout) {
+    const resumeInProgressWorkout = async () => {
+      if (!user) return;
+
+      // Find any workout logs that are not completed
+      const inProgressLogs = await db.workout_logs
+        .where('user_id')
+        .equals(user.id)
+        .filter(log => log.completed_at === null)
+        .toArray();
+
+      if (inProgressLogs.length > 0) {
+        // Resume the most recent in-progress workout
+        const mostRecent = inProgressLogs.sort(
+          (a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
+        )[0];
+
+        setCurrentLog(mostRecent);
+
+        // Load the workout
+        const workout = await db.workouts.get(mostRecent.workout_id);
+        if (workout) {
+          setSelectedWorkout(workout);
+        }
+
+        // Load workout exercises
+        const exercises = await db.workout_exercises
+          .where('workout_id')
+          .equals(mostRecent.workout_id)
+          .toArray();
+        setWorkoutExercises(exercises);
+
+        // Load the sets
+        const sets = await db.workout_log_sets
+          .where('workout_log_id')
+          .equals(mostRecent.id)
+          .toArray();
+        setLogSets(sets);
+
+        // Load notes
+        setNotes(mostRecent.notes || '');
+      }
+    };
+
+    resumeInProgressWorkout();
+  }, [user]);
+
+  useEffect(() => {
+    if (selectedWorkout && !currentLog) {
       db.workout_exercises
         .where('workout_id')
         .equals(selectedWorkout.id)
         .toArray()
         .then(setWorkoutExercises);
     }
-  }, [selectedWorkout]);
+  }, [selectedWorkout, currentLog]);
 
   useEffect(() => {
     if (workoutExercises.length > 0) {
@@ -259,6 +307,19 @@ export const LogWorkout: React.FC = () => {
     }
   };
 
+  const handleNotesChange = async (value: string) => {
+    setNotes(value);
+
+    // Save notes to database immediately
+    if (currentLog) {
+      await db.workout_logs.update(currentLog.id, {
+        notes: value,
+        updated_at: new Date().toISOString(),
+        _synced: false,
+      });
+    }
+  };
+
   if (!currentLog && !selectedWorkout) {
     return (
       <div className="container mx-auto px-4 py-6">
@@ -330,11 +391,22 @@ export const LogWorkout: React.FC = () => {
     return { exercise, workoutExercise: we, sets };
   });
 
+  const workoutDuration = currentLog
+    ? Math.floor((new Date().getTime() - new Date(currentLog.started_at).getTime()) / 1000 / 60)
+    : 0;
+
   return (
     <div className="container mx-auto px-4 py-6 pb-24">
       <div className="max-w-2xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">{selectedWorkout?.name}</h2>
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h2 className="text-2xl font-bold">{selectedWorkout?.name}</h2>
+            {currentLog && (
+              <p className="text-sm text-gray-400 mt-1">
+                Started {new Date(currentLog.started_at).toLocaleTimeString()} • {workoutDuration} min
+              </p>
+            )}
+          </div>
           <div className="flex gap-2">
             <button onClick={handleCancelWorkout} className="btn btn-secondary text-sm ripple">
               Cancel
@@ -463,7 +535,7 @@ export const LogWorkout: React.FC = () => {
             <textarea
               id="notes"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e) => handleNotesChange(e.target.value)}
               className="input"
               rows={4}
               placeholder="How did the workout feel? Any observations?"
