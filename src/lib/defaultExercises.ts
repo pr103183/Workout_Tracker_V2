@@ -62,7 +62,7 @@ export const defaultExercises = [
   {
     name: 'Dumbbell Bicep Curl',
     description: 'Isolation exercise for biceps',
-    muscle_group: 'Arms',
+    muscle_group: 'Biceps',
     equipment: 'Dumbbells',
     instructions: '1. Stand with dumbbells at sides\n2. Keep elbows close to body\n3. Curl weights up toward shoulders\n4. Squeeze biceps at top\n5. Lower with control',
     is_custom: false,
@@ -70,7 +70,7 @@ export const defaultExercises = [
   {
     name: 'Tricep Dips',
     description: 'Bodyweight tricep exercise',
-    muscle_group: 'Arms',
+    muscle_group: 'Triceps',
     equipment: 'Dip Bars',
     instructions: '1. Grip bars with arms extended\n2. Lower body by bending elbows\n3. Go down until upper arms are parallel to floor\n4. Press back up to starting position\n5. Keep chest upright',
     is_custom: false,

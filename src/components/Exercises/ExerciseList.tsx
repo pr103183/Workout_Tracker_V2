@@ -49,11 +49,42 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({ onCreateExercise, on
       }
     };
 
+    const migrateArmsCategory = async () => {
+      if (!user) return;
+
+      // Find all exercises with muscle_group 'Arms'
+      const armsExercises = await db.exercises
+        .where('user_id')
+        .equals(user.id)
+        .filter(ex => ex.muscle_group === 'Arms')
+        .toArray();
+
+      // Update each exercise to either Biceps or Triceps based on name
+      for (const exercise of armsExercises) {
+        const nameLower = exercise.name.toLowerCase();
+        let newMuscleGroup = 'Biceps'; // Default to Biceps
+
+        // Check if the exercise is tricep-focused
+        if (nameLower.includes('tricep') || nameLower.includes('dip') ||
+            nameLower.includes('pushdown') || nameLower.includes('extension') ||
+            nameLower.includes('overhead press') && nameLower.includes('tricep')) {
+          newMuscleGroup = 'Triceps';
+        }
+
+        await db.exercises.update(exercise.id, {
+          muscle_group: newMuscleGroup,
+          updated_at: new Date().toISOString(),
+          _synced: false,
+        });
+      }
+    };
+
     initializeDefaultExercises();
+    migrateArmsCategory();
   }, [user]);
 
   const muscleGroups = useMemo(
-    () => ['All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'],
+    () => ['All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Biceps', 'Triceps', 'Core'],
     []
   );
 

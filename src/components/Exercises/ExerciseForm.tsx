@@ -20,7 +20,7 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({ exercise, onSave, on
   const [muscleActivation, setMuscleActivation] = useState(exercise?.muscle_activation || '');
   const [safetyTips, setSafetyTips] = useState(exercise?.safety_tips || '');
 
-  const muscleGroups = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'];
+  const muscleGroups = ['Chest', 'Back', 'Legs', 'Shoulders', 'Biceps', 'Triceps', 'Core'];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
