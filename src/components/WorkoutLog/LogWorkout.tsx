@@ -18,10 +18,30 @@ export const LogWorkout: React.FC = () => {
   const [logSets, setLogSets] = useState<WorkoutLogSet[]>([]);
   const [notes, setNotes] = useState('');
   const [previousData, setPreviousData] = useState<Map<string, PreviousSetData>>(new Map());
+  const [showPreviousWorkouts, setShowPreviousWorkouts] = useState(false);
+  const [selectedPreviousLog, setSelectedPreviousLog] = useState<WorkoutLog | null>(null);
 
   const workouts = useLiveQuery(
     () => db.workouts.where('user_id').equals(user?.id || '').toArray(),
     [user?.id]
+  );
+
+  // Query for previous completed workouts of the selected workout
+  const previousCompletedLogs = useLiveQuery(
+    async () => {
+      if (!selectedWorkout || !user) return [];
+
+      const logs = await db.workout_logs
+        .where('user_id')
+        .equals(user.id)
+        .toArray();
+
+      return logs
+        .filter(log => log.workout_id === selectedWorkout.id && log.completed_at)
+        .sort((a, b) => new Date(b.completed_at!).getTime() - new Date(a.completed_at!).getTime())
+        .slice(0, 10); // Show last 10 completed workouts
+    },
+    [selectedWorkout?.id, user?.id]
   );
 
   // Check for in-progress workout on mount
@@ -163,6 +183,15 @@ export const LogWorkout: React.FC = () => {
     await db.workout_logs.add(log);
     setCurrentLog(log);
 
+    // Load previous workout sets if a previous log was selected
+    let previousSets: WorkoutLogSet[] = [];
+    if (selectedPreviousLog) {
+      previousSets = await db.workout_log_sets
+        .where('workout_log_id')
+        .equals(selectedPreviousLog.id)
+        .toArray();
+    }
+
     const initialSets: WorkoutLogSet[] = [];
     for (const we of workoutExercises) {
       for (let i = 1; i <= we.sets; i++) {
@@ -171,13 +200,18 @@ export const LogWorkout: React.FC = () => {
           ? we.custom_reps[i - 1]
           : we.reps;
 
+        // Find matching set from previous workout
+        const prevSet = previousSets.find(
+          s => s.exercise_id === we.exercise_id && s.set_number === i
+        );
+
         initialSets.push({
           id: crypto.randomUUID(),
           workout_log_id: logId,
           exercise_id: we.exercise_id,
           set_number: i,
-          reps: reps,
-          weight: 0,
+          reps: prevSet ? prevSet.reps : reps,
+          weight: prevSet ? prevSet.weight : 0,
           completed: false,
           created_at: now,
           _synced: false,
@@ -187,6 +221,7 @@ export const LogWorkout: React.FC = () => {
 
     await db.workout_log_sets.bulkAdd(initialSets);
     setLogSets(initialSets);
+    setSelectedPreviousLog(null); // Reset selection
   };
 
   const handleUpdateSet = (setId: string, field: 'reps' | 'weight', value: number) => {
@@ -360,31 +395,88 @@ export const LogWorkout: React.FC = () => {
         <div className="max-w-2xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">{selectedWorkout.name}</h2>
-            <button onClick={() => setSelectedWorkout(null)} className="btn btn-secondary">
+            <button onClick={() => { setSelectedWorkout(null); setShowPreviousWorkouts(false); setSelectedPreviousLog(null); }} className="btn btn-secondary">
               Back
             </button>
           </div>
 
-          <div className="card mb-6">
-            <h3 className="text-lg font-semibold mb-4">Exercises in this workout:</h3>
-            <div className="space-y-2">
-              {workoutExercises.map((we, index) => {
-                const exercise = exercises.find(e => e.id === we.exercise_id);
-                return (
-                  <div key={index} className="bg-gray-700 p-3 rounded-lg">
-                    <div className="font-medium">{exercise?.name || 'Unknown'}</div>
-                    <div className="text-sm text-gray-400">
-                      {we.sets} sets × {we.reps} reps
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          {!showPreviousWorkouts ? (
+            <>
+              <div className="card mb-6">
+                <h3 className="text-lg font-semibold mb-4">Exercises in this workout:</h3>
+                <div className="space-y-2">
+                  {workoutExercises.map((we, index) => {
+                    const exercise = exercises.find(e => e.id === we.exercise_id);
+                    return (
+                      <div key={index} className="bg-gray-700 p-3 rounded-lg">
+                        <div className="font-medium">{exercise?.name || 'Unknown'}</div>
+                        <div className="text-sm text-gray-400">
+                          {we.sets} sets × {we.reps} reps
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
 
-          <button onClick={handleStartWorkout} className="btn btn-primary w-full">
-            Start Workout
-          </button>
+              <div className="space-y-3">
+                <button onClick={handleStartWorkout} className="btn btn-primary w-full">
+                  Start Fresh Workout
+                </button>
+                {previousCompletedLogs && previousCompletedLogs.length > 0 && (
+                  <button
+                    onClick={() => setShowPreviousWorkouts(true)}
+                    className="btn btn-secondary w-full"
+                  >
+                    Start from Previous Workout
+                  </button>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="card mb-6">
+                <h3 className="text-lg font-semibold mb-4">Select a previous workout to start from:</h3>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {previousCompletedLogs && previousCompletedLogs.map((log) => (
+                    <div
+                      key={log.id}
+                      onClick={() => setSelectedPreviousLog(log)}
+                      className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                        selectedPreviousLog?.id === log.id
+                          ? 'bg-primary-600'
+                          : 'bg-gray-700 hover:bg-gray-600'
+                      }`}
+                    >
+                      <div className="font-medium">
+                        {new Date(log.completed_at!).toLocaleDateString()} at{' '}
+                        {new Date(log.completed_at!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                      {log.notes && (
+                        <div className="text-sm text-gray-300 mt-1">{log.notes}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  onClick={handleStartWorkout}
+                  disabled={!selectedPreviousLog}
+                  className="btn btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Start with Selected Workout
+                </button>
+                <button
+                  onClick={() => { setShowPreviousWorkouts(false); setSelectedPreviousLog(null); }}
+                  className="btn btn-secondary w-full"
+                >
+                  Back
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
