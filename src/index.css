@@ -3,8 +3,69 @@
 @tailwind utilities;
 
 @layer base {
+  /* Theme variables */
+  :root {
+    --text-size-multiplier: 1;
+  }
+
+  :root[data-text-size="small"] {
+    --text-size-multiplier: 0.875;
+  }
+
+  :root[data-text-size="medium"] {
+    --text-size-multiplier: 1;
+  }
+
+  :root[data-text-size="large"] {
+    --text-size-multiplier: 1.125;
+  }
+
+  :root[data-text-size="xl"] {
+    --text-size-multiplier: 1.25;
+  }
+
+  /* Dark theme (default) */
+  .dark {
+    --bg-primary: theme('colors.gray.900');
+    --bg-secondary: theme('colors.gray.800');
+    --bg-tertiary: theme('colors.gray.700');
+    --text-primary: theme('colors.gray.100');
+    --text-secondary: theme('colors.gray.300');
+    --text-tertiary: theme('colors.gray.400');
+    --text-muted: theme('colors.gray.500');
+    --border-color: theme('colors.gray.700');
+    --border-hover: theme('colors.gray.600');
+    --input-bg: theme('colors.gray.800');
+    --input-border: theme('colors.gray.700');
+    --card-bg: theme('colors.gray.800');
+    --card-border: theme('colors.gray.700');
+  }
+
+  /* Light theme */
+  .light {
+    --bg-primary: theme('colors.gray.50');
+    --bg-secondary: theme('colors.white');
+    --bg-tertiary: theme('colors.gray.100');
+    --text-primary: theme('colors.gray.900');
+    --text-secondary: theme('colors.gray.700');
+    --text-tertiary: theme('colors.gray.600');
+    --text-muted: theme('colors.gray.500');
+    --border-color: theme('colors.gray.300');
+    --border-hover: theme('colors.gray.400');
+    --input-bg: theme('colors.white');
+    --input-border: theme('colors.gray.300');
+    --card-bg: theme('colors.white');
+    --card-border: theme('colors.gray.200');
+  }
+
   body {
-    @apply bg-gray-900 text-gray-100;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: calc(1rem * var(--text-size-multiplier));
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-size: calc(1em * var(--text-size-multiplier));
   }
 }
 
@@ -18,7 +79,12 @@
   }
 
   .btn-secondary {
-    @apply bg-gray-700 hover:bg-gray-600 text-white;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--border-hover);
   }
 
   .btn-danger {
@@ -26,14 +92,24 @@
   }
 
   .input {
-    @apply w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:border-transparent;
+    @apply w-full px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600 focus:border-transparent;
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-primary);
+  }
+
+  .input::placeholder {
+    color: var(--text-muted);
   }
 
   .card {
-    @apply bg-gray-800 rounded-lg p-4 shadow-lg border border-gray-700;
+    @apply rounded-lg p-4 shadow-lg;
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
   }
 
   .label {
-    @apply block text-sm font-medium text-gray-300 mb-1;
+    @apply block text-sm font-medium mb-1;
+    color: var(--text-secondary);
   }
 }

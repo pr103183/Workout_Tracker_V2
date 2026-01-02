@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export const Settings: React.FC = () => {
   const { user } = useAuth();
+  const { theme, setTheme, textSize, setTextSize } = useTheme();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -50,15 +52,55 @@ export const Settings: React.FC = () => {
         <h2 className="text-2xl font-bold mb-6">Settings</h2>
 
         <div className="card mb-6">
+          <h3 className="text-lg font-semibold mb-4">Appearance</h3>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="theme" className="label">Theme</label>
+              <select
+                id="theme"
+                value={theme}
+                onChange={(e) => setTheme(e.target.value as 'light' | 'dark' | 'auto')}
+                className="input"
+              >
+                <option value="auto">Auto (System Preference)</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                Auto mode switches based on your device settings
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="textSize" className="label">Text Size</label>
+              <select
+                id="textSize"
+                value={textSize}
+                onChange={(e) => setTextSize(e.target.value as 'small' | 'medium' | 'large' | 'xl')}
+                className="input"
+              >
+                <option value="small">Small</option>
+                <option value="medium">Medium (Default)</option>
+                <option value="large">Large</option>
+                <option value="xl">Extra Large</option>
+              </select>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                Adjust text size for better readability
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card mb-6">
           <h3 className="text-lg font-semibold mb-4">Account Information</h3>
           <div className="space-y-2">
             <div>
               <span className="label">Email</span>
-              <p className="text-white">{user?.email}</p>
+              <p style={{ color: 'var(--text-primary)' }}>{user?.email}</p>
             </div>
             <div>
               <span className="label">User ID</span>
-              <p className="text-white text-sm font-mono">{user?.id}</p>
+              <p className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>{user?.id}</p>
             </div>
           </div>
         </div>

@@ -157,7 +157,7 @@ This document outlines potential enhancements for the Workout Tracker V2 app. Ea
 
 ## 📱 User Experience Enhancements
 
-### 9. Dark/Light Theme Toggle 🟡 **HIGH PRIORITY**
+### 9. Dark/Light Theme Toggle ✅ **IMPLEMENTED**
 **What it is:** Let users switch between dark and light color schemes.
 
 **User Benefits:**
@@ -166,28 +166,34 @@ This document outlines potential enhancements for the Workout Tracker V2 app. Ea
 - Automatic theme based on system preference
 - Custom color accent options
 
-**Technical Details:**
-- Add theme context
-- CSS variables for colors
-- Persist preference in localStorage
-- System preference detection with matchMedia
+**Implementation Details:**
+- ✅ Theme context with React Context API
+- ✅ CSS custom properties for theme colors
+- ✅ Persisted in localStorage
+- ✅ System preference detection with matchMedia
+- ✅ Settings page controls (Auto/Light/Dark)
+
+**Location:** Settings tab → Appearance section
 
 ---
 
-### 10. Swipe Gestures for Navigation 🟢 **MEDIUM PRIORITY**
+### 10. Swipe Gestures for Navigation ✅ **IMPLEMENTED**
 **What it is:** Swipe between tabs on mobile for faster navigation.
 
 **User Benefits:**
 - Swipe left/right to switch tabs
 - More natural mobile experience
 - Faster than tapping nav buttons
-- Back swipe to return to previous screen
+- Intuitive mobile-first interaction
 
-**Technical Details:**
-- Touch event handlers (touchstart, touchmove, touchend)
-- Swipe detection library (like react-swipeable)
-- Smooth tab transitions
-- Configurable swipe sensitivity
+**Implementation Details:**
+- ✅ Custom useSwipe hook with touch event handlers
+- ✅ Swipe detection (50px minimum distance)
+- ✅ Applied to main content area
+- ✅ Works across all tabs
+- ✅ Cycles through tabs in order
+
+**Usage:** Swipe left on main content to go to next tab, swipe right to go to previous tab
 
 ---
 
@@ -753,7 +759,7 @@ This document outlines potential enhancements for the Workout Tracker V2 app. Ea
 
 ---
 
-### 40. Text Size Controls 🟡 **HIGH PRIORITY**
+### 40. Text Size Controls ✅ **IMPLEMENTED**
 **What it is:** Let users adjust text size throughout app.
 
 **User Benefits:**
@@ -763,12 +769,20 @@ This document outlines potential enhancements for the Workout Tracker V2 app. Ea
 - Persistent preference
 - Range: Small/Medium/Large/XL
 
-**Technical Details:**
-- CSS custom properties for font sizes
-- Size multiplier setting
-- Responsive layout adjustments
-- LocalStorage preference
-- Respect system text size settings
+**Implementation Details:**
+- ✅ CSS custom properties with --text-size-multiplier
+- ✅ Size multiplier: 0.875 (small), 1.0 (medium), 1.125 (large), 1.25 (xl)
+- ✅ Responsive layout adjustments
+- ✅ Persisted in localStorage
+- ✅ Settings page dropdown control
+
+**Multipliers:**
+- Small: 0.875x (87.5% of base size)
+- Medium: 1.0x (default, 100%)
+- Large: 1.125x (112.5%)
+- Extra Large: 1.25x (125%)
+
+**Location:** Settings tab → Appearance section
 
 ---
 

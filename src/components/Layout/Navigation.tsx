@@ -16,27 +16,37 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }
   ];
 
   return (
-    <nav className="bg-gray-800 border-b border-gray-700 sticky top-16 z-10" aria-label="Main navigation">
+    <nav
+      className="sticky top-16 z-10"
+      style={{
+        backgroundColor: 'var(--bg-secondary)',
+        borderBottom: '1px solid var(--border-color)'
+      }}
+      aria-label="Main navigation"
+    >
       <div className="container mx-auto px-4">
         <div className="flex overflow-x-auto gap-2 py-2" role="tablist">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              aria-controls={`panel-${tab.id}`}
-              tabIndex={activeTab === tab.id ? 0 : -1}
-              className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
-                activeTab === tab.id
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
-            >
-              <span className="mr-2" aria-hidden="true">{tab.icon}</span>
-              {tab.label}
-            </button>
-          ))}
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => onTabChange(tab.id)}
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`panel-${tab.id}`}
+                tabIndex={isActive ? 0 : -1}
+                className="px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors"
+                style={{
+                  backgroundColor: isActive ? '#2563eb' : 'var(--bg-tertiary)',
+                  color: isActive ? '#ffffff' : 'var(--text-secondary)'
+                }}
+              >
+                <span className="mr-2" aria-hidden="true">{tab.icon}</span>
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       </div>
     </nav>

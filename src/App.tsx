@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { Login } from './components/Auth/Login';
 import { Register } from './components/Auth/Register';
 import { ForgotPassword } from './components/Auth/ForgotPassword';
@@ -15,6 +16,9 @@ import { WorkoutPlanner } from './components/Planning/WorkoutPlanner';
 import { Settings } from './components/Settings/Settings';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Workout, Exercise } from './lib/db';
+import { useSwipe } from './hooks/useSwipe';
+
+const TABS = ['workouts', 'exercises', 'log', 'history', 'plan', 'settings'];
 
 const AuthenticatedApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState('workouts');
@@ -63,13 +67,37 @@ const AuthenticatedApp: React.FC = () => {
     setEditingExercise(undefined);
   }, []);
 
+  // Swipe gesture handlers
+  const handleSwipeLeft = useCallback(() => {
+    const currentIndex = TABS.indexOf(activeTab);
+    if (currentIndex < TABS.length - 1) {
+      setActiveTab(TABS[currentIndex + 1]);
+    }
+  }, [activeTab]);
+
+  const handleSwipeRight = useCallback(() => {
+    const currentIndex = TABS.indexOf(activeTab);
+    if (currentIndex > 0) {
+      setActiveTab(TABS[currentIndex - 1]);
+    }
+  }, [activeTab]);
+
+  const swipeHandlers = useSwipe({
+    onSwipedLeft: handleSwipeLeft,
+    onSwipedRight: handleSwipeRight,
+  });
+
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gray-900">
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-primary)' }}>
         <Header />
         <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
 
-        <main role="main" aria-label="Main content">
+        <main
+          role="main"
+          aria-label="Main content"
+          {...swipeHandlers}
+        >
         {activeTab === 'workouts' && !showWorkoutForm && (
           <WorkoutList
             onSelectWorkout={handleEditWorkout}
@@ -149,9 +177,11 @@ const AppContent: React.FC = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
