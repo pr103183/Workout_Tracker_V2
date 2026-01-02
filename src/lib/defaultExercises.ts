@@ -41,6 +41,7 @@ export const defaultExercises = [
     muscle_group: 'Back',
     equipment: 'Pull-up Bar',
     instructions: '1. Hang from bar with overhand grip\n2. Pull yourself up until chin clears bar\n3. Lower with control to full extension\n4. Keep core engaged throughout',
+    is_bodyweight: true,
     is_custom: false,
   },
   {
@@ -73,6 +74,7 @@ export const defaultExercises = [
     muscle_group: 'Triceps',
     equipment: 'Dip Bars',
     instructions: '1. Grip bars with arms extended\n2. Lower body by bending elbows\n3. Go down until upper arms are parallel to floor\n4. Press back up to starting position\n5. Keep chest upright',
+    is_bodyweight: true,
     is_custom: false,
   },
   {
@@ -89,6 +91,7 @@ export const defaultExercises = [
     muscle_group: 'Core',
     equipment: 'Bodyweight',
     instructions: '1. Start in push-up position\n2. Rest on forearms instead of hands\n3. Keep body in straight line\n4. Engage core and glutes\n5. Hold for desired time',
+    is_bodyweight: true,
     is_custom: false,
   },
   {

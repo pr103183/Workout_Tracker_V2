@@ -20,6 +20,7 @@ export interface Exercise {
   common_mistakes?: string;
   muscle_activation?: string;
   safety_tips?: string;
+  is_bodyweight?: boolean;
   is_custom: boolean;
   created_at: string;
   updated_at: string;

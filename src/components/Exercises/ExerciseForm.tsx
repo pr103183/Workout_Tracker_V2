@@ -19,6 +19,7 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({ exercise, onSave, on
   const [commonMistakes, setCommonMistakes] = useState(exercise?.common_mistakes || '');
   const [muscleActivation, setMuscleActivation] = useState(exercise?.muscle_activation || '');
   const [safetyTips, setSafetyTips] = useState(exercise?.safety_tips || '');
+  const [isBodyweight, setIsBodyweight] = useState(exercise?.is_bodyweight || false);
 
   const muscleGroups = ['Chest', 'Back', 'Legs', 'Shoulders', 'Biceps', 'Triceps', 'Core'];
 
@@ -37,6 +38,7 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({ exercise, onSave, on
       common_mistakes: commonMistakes,
       muscle_activation: muscleActivation,
       safety_tips: safetyTips,
+      is_bodyweight: isBodyweight,
       is_custom: true,
       created_at: exercise?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -100,6 +102,18 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({ exercise, onSave, on
               className="input"
               placeholder="e.g., Cable Machine"
             />
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isBodyweight}
+                onChange={(e) => setIsBodyweight(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-primary-600 focus:ring-primary-500"
+              />
+              <span className="label">Bodyweight Exercise (no weight input)</span>
+            </label>
           </div>
 
           <div>

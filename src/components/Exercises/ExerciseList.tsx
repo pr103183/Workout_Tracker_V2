@@ -40,6 +40,7 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({ onCreateExercise, on
           common_mistakes: ex.common_mistakes || '',
           muscle_activation: ex.muscle_activation || '',
           safety_tips: ex.safety_tips || '',
+          is_bodyweight: ex.is_bodyweight || false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           _synced: false,

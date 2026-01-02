@@ -504,22 +504,24 @@ export const LogWorkout: React.FC = () => {
                                 </div>
                               )}
                             </div>
-                            <div className="flex-1">
-                              <input
-                                type="number"
-                                value={set.weight}
-                                onChange={(e) => handleUpdateSet(set.id, 'weight', parseFloat(e.target.value) || 0)}
-                                onBlur={() => handleSaveSet(set.id)}
-                                className="input text-sm w-full"
-                                placeholder="Weight"
-                                step="0.5"
-                              />
-                              {prevSet && (
-                                <div className="text-xs text-gray-500 mt-0.5">
-                                  Last: {prevSet.weight} lbs
-                                </div>
-                              )}
-                            </div>
+                            {!exercise?.is_bodyweight && (
+                              <div className="flex-1">
+                                <input
+                                  type="number"
+                                  value={set.weight}
+                                  onChange={(e) => handleUpdateSet(set.id, 'weight', parseFloat(e.target.value) || 0)}
+                                  onBlur={() => handleSaveSet(set.id)}
+                                  className="input text-sm w-full"
+                                  placeholder="Weight"
+                                  step="0.5"
+                                />
+                                {prevSet && (
+                                  <div className="text-xs text-gray-500 mt-0.5">
+                                    Last: {prevSet.weight} lbs
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
