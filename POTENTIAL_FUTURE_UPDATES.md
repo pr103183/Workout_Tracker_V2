@@ -361,7 +361,7 @@ This document outlines potential enhancements for the Workout Tracker V2 app. Ea
 
 ---
 
-### 18. Auto-Fill Previous Weights 🟡 **HIGH PRIORITY**
+### 18. Auto-Fill Previous Weights ✅ **IMPLEMENTED**
 **What it is:** Automatically pre-fill weight from last workout.
 
 **User Benefits:**
@@ -371,12 +371,17 @@ This document outlines potential enhancements for the Workout Tracker V2 app. Ea
 - Progressive overload suggestions (+5 lbs)
 - Historical data right in logging interface
 
-**Technical Details:**
-- Query last workout_log for same exercise
-- Pre-populate weight/reps fields
-- "Last time: 135 lbs × 10" display
-- Smart increment suggestions
-- Comparison view (this week vs last week)
+**Implementation Details:**
+- ✅ Fetches most recent completed workout for each exercise
+- ✅ Displays previous performance in blue info box
+- ✅ Shows last workout date
+- ✅ "Use Same" button to copy previous weights/reps
+- ✅ "+5 lbs" button for progressive overload (adds 5 lbs to all sets)
+- ✅ Individual set comparison showing "Last: X reps" and "Last: Y lbs" under each input
+- ✅ Quick visual reference of all previous sets
+- ✅ Auto-saves when using quick-fill buttons
+
+**Location:** Log Workout tab - appears when logging exercises with previous history
 
 ---
 
