@@ -44,6 +44,7 @@ export interface WorkoutExercise {
   order_index: number;
   sets: number;
   reps: number;
+  custom_reps?: number[]; // Array of reps for each set (e.g., [16, 12, 8])
   rest_seconds: number;
   created_at: string;
   _synced?: boolean;

@@ -166,12 +166,17 @@ export const LogWorkout: React.FC = () => {
     const initialSets: WorkoutLogSet[] = [];
     for (const we of workoutExercises) {
       for (let i = 1; i <= we.sets; i++) {
+        // Use custom_reps if available, otherwise use default reps
+        const reps = we.custom_reps && we.custom_reps[i - 1] !== undefined
+          ? we.custom_reps[i - 1]
+          : we.reps;
+
         initialSets.push({
           id: crypto.randomUUID(),
           workout_log_id: logId,
           exercise_id: we.exercise_id,
           set_number: i,
-          reps: we.reps,
+          reps: reps,
           weight: 0,
           completed: false,
           created_at: now,
@@ -494,6 +499,7 @@ export const LogWorkout: React.FC = () => {
                                 type="number"
                                 value={set.reps}
                                 onChange={(e) => handleUpdateSet(set.id, 'reps', parseInt(e.target.value) || 0)}
+                                onFocus={(e) => e.target.select()}
                                 onBlur={() => handleSaveSet(set.id)}
                                 className="input text-sm w-full"
                                 placeholder="Reps"
@@ -510,6 +516,7 @@ export const LogWorkout: React.FC = () => {
                                   type="number"
                                   value={set.weight}
                                   onChange={(e) => handleUpdateSet(set.id, 'weight', parseFloat(e.target.value) || 0)}
+                                  onFocus={(e) => e.target.select()}
                                   onBlur={() => handleSaveSet(set.id)}
                                   className="input text-sm w-full"
                                   placeholder="Weight"

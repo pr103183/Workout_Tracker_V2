@@ -15,6 +15,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSave, onCan
   const [description, setDescription] = useState(workout?.description || '');
   const [selectedExercises, setSelectedExercises] = useState<WorkoutExercise[]>([]);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
+  const [expandedExercise, setExpandedExercise] = useState<number | null>(null);
 
   const exercises = useLiveQuery(
     () => db.exercises.where('user_id').equals(user?.id || '').toArray(),
@@ -54,6 +55,39 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSave, onCan
   const handleUpdateExercise = (index: number, field: keyof WorkoutExercise, value: number) => {
     const updated = [...selectedExercises];
     updated[index] = { ...updated[index], [field]: value };
+
+    // If sets changed, update custom_reps array size
+    if (field === 'sets') {
+      const currentCustomReps = updated[index].custom_reps || [];
+      const newCustomReps = Array.from({ length: value }, (_, i) =>
+        currentCustomReps[i] || updated[index].reps
+      );
+      updated[index] = { ...updated[index], custom_reps: newCustomReps };
+    }
+
+    setSelectedExercises(updated);
+  };
+
+  const handleMoveExercise = (index: number, direction: 'up' | 'down') => {
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= selectedExercises.length) return;
+
+    const updated = [...selectedExercises];
+    [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
+
+    // Update order_index for both exercises
+    updated.forEach((ex, i) => {
+      ex.order_index = i;
+    });
+
+    setSelectedExercises(updated);
+  };
+
+  const handleUpdateCustomReps = (exerciseIndex: number, setIndex: number, reps: number) => {
+    const updated = [...selectedExercises];
+    const customReps = updated[exerciseIndex].custom_reps || Array(updated[exerciseIndex].sets).fill(updated[exerciseIndex].reps);
+    customReps[setIndex] = reps;
+    updated[exerciseIndex] = { ...updated[exerciseIndex], custom_reps: customReps };
     setSelectedExercises(updated);
   };
 
@@ -150,7 +184,27 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSave, onCan
                   return (
                     <div key={index} className="bg-gray-700 p-4 rounded-lg">
                       <div className="flex justify-between items-start mb-3">
-                        <h4 className="font-medium">{exercise?.name || 'Unknown'}</h4>
+                        <div className="flex items-center gap-2">
+                          <div className="flex flex-col gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleMoveExercise(index, 'up')}
+                              disabled={index === 0}
+                              className={`text-xs ${index === 0 ? 'text-gray-600 cursor-not-allowed' : 'text-gray-400 hover:text-white'}`}
+                            >
+                              ▲
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleMoveExercise(index, 'down')}
+                              disabled={index === selectedExercises.length - 1}
+                              className={`text-xs ${index === selectedExercises.length - 1 ? 'text-gray-600 cursor-not-allowed' : 'text-gray-400 hover:text-white'}`}
+                            >
+                              ▼
+                            </button>
+                          </div>
+                          <h4 className="font-medium">{exercise?.name || 'Unknown'}</h4>
+                        </div>
                         <button
                           type="button"
                           onClick={() => handleRemoveExercise(index)}
@@ -191,6 +245,35 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSave, onCan
                             min="0"
                           />
                         </div>
+                      </div>
+
+                      <div className="mt-3">
+                        <button
+                          type="button"
+                          onClick={() => setExpandedExercise(expandedExercise === index ? null : index)}
+                          className="text-sm text-primary-400 hover:text-primary-300"
+                        >
+                          {expandedExercise === index ? '− Collapse Custom Reps' : '+ Customize Reps Per Set'}
+                        </button>
+
+                        {expandedExercise === index && (
+                          <div className="mt-3 space-y-2 bg-gray-800 p-3 rounded-lg">
+                            <p className="text-xs text-gray-400 mb-2">Set custom reps for each set:</p>
+                            {Array.from({ length: workoutExercise.sets }).map((_, setIndex) => (
+                              <div key={setIndex} className="flex items-center gap-2">
+                                <label className="text-xs text-gray-400 w-12">Set {setIndex + 1}:</label>
+                                <input
+                                  type="number"
+                                  value={workoutExercise.custom_reps?.[setIndex] || workoutExercise.reps}
+                                  onChange={(e) => handleUpdateCustomReps(index, setIndex, parseInt(e.target.value) || 0)}
+                                  className="input text-sm flex-1"
+                                  min="1"
+                                  placeholder="Reps"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
