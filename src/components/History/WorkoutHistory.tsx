@@ -73,6 +73,12 @@ export const WorkoutHistory: React.FC = () => {
       }
       grouped[set.exercise_id].push(set);
     });
+
+    // Sort sets within each exercise group by set_number
+    Object.keys(grouped).forEach(exerciseId => {
+      grouped[exerciseId].sort((a, b) => a.set_number - b.set_number);
+    });
+
     return grouped;
   };
 
