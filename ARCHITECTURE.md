@@ -21,7 +21,14 @@
 - ✅ Automatically syncs when back online
 - ✅ Installable on phones like a native app
 - ✅ Multi-user support with secure authentication
-- ✅ Real-time progress tracking
+- ✅ Real-time progress tracking with charts and analytics
+- ✅ Personal records tracking and achievements
+- ✅ Custom reps per set and exercise reordering
+- ✅ Start workouts from previous sessions
+- ✅ Search and filter across workouts and history
+- ✅ Dark/Light theme with customizable text size
+- ✅ Comprehensive animations and micro-interactions
+- ✅ Form guides and exercise cues
 
 ---
 
@@ -921,6 +928,83 @@ The architecture ensures users can track workouts anywhere, anytime, with their 
 
 ---
 
+## 🚀 Recent Feature Additions (December 2025 - January 2026)
+
+### Progress Tracking & Analytics
+- **Charts & Visualizations**: Volume over time, workout frequency, muscle group distribution
+- **Personal Records**: Automatic PR detection with estimated 1RM calculations
+- **Streaks & Achievements**: 11 unlockable achievements, current/longest streak tracking
+- Multi-tab progress dashboard with comprehensive statistics
+
+### Workout Experience Enhancements
+- **Custom Reps Per Set**: Different rep targets for each set (e.g., 16, 12, 8)
+- **Exercise Reordering**: Drag-and-drop style reordering with up/down arrows
+- **Start from Previous**: Pre-populate new workouts with previous weights/reps
+- **Auto-Fill Weights**: Shows last workout data with "Use Same" and "+5 lbs" buttons
+- **Bodyweight Exercises**: Hide weight input for bodyweight movements
+- **Exercise Form Guides**: Form cues, common mistakes, muscle activation, safety tips
+
+### User Interface Improvements
+- **Search & Filter**: Search workouts/history, filter by date range and workout type
+- **Dark/Light Themes**: Three theme modes (Auto/Light/Dark) with system preference detection
+- **Text Size Controls**: Four size options (Small/Medium/Large/XL) for accessibility
+- **Swipe Navigation**: Swipe left/right to navigate between tabs on mobile
+- **Comprehensive Animations**: Stagger animations, card hovers, ripple effects, celebration animations
+- **Input UX**: Auto-select on focus for number inputs, one-tap editing
+
+### Workout Planning
+- **Calendar View**: Visual workout planner with drag-and-drop scheduling
+- **Resume In-Progress**: Automatically resumes incomplete workouts on app open
+- **Workout History Editing**: Edit and delete historical workout data
+
+---
+
+## ⚡ Performance Considerations & Known Optimizations Needed
+
+### Current Performance Characteristics
+- **Bundle Size**: ~856KB (gzipped: ~249KB) - larger than ideal due to Recharts library
+- **Database Queries**: 31+ useLiveQuery calls across components
+- **Offline Performance**: Excellent - all data cached locally in IndexedDB
+- **Sync Performance**: Runs every 60 seconds, sequential uploads per entity type
+
+### Identified Optimization Opportunities
+
+#### High Priority
+1. **Code Splitting**: Implement lazy loading for routes and heavy components (Progress charts)
+   - Expected Impact: 40-60% reduction in initial bundle size
+   - Strategy: React.lazy() for dashboard, history, and chart components
+
+2. **Database Query Optimization**: Use bulk queries instead of nested loops
+   - Current Issue: O(n²) queries in ProgressDashboard and PersonalRecords
+   - Expected Impact: 10-100x faster on large datasets
+   - Strategy: Use `.anyOf()` for batch queries, create lookup maps
+
+3. **Batch Sync Operations**: Upload multiple records in single API calls
+   - Current Issue: Sequential upserts, one per record
+   - Expected Impact: 5-10x faster sync, 90% fewer network calls
+   - Strategy: Use Supabase batch upsert API
+
+4. **Database Indexes**: Add compound indexes for common query patterns
+   - Missing: `[user_id+completed_at]`, `[workout_log_id+exercise_id]`
+   - Expected Impact: Dramatically faster history queries and filtering
+
+#### Medium Priority
+5. **Memoization**: Add React.memo() to list items and heavy computation results
+6. **Search Debouncing**: Prevent re-renders on every keystroke (300ms delay)
+7. **Optimistic UI Updates**: Update UI immediately, rollback on error
+8. **Shared Data Hooks**: Consolidate duplicate useLiveQuery calls into custom hooks
+
+#### Low Priority (Polish)
+9. **Skeleton Screens**: Replace "Loading..." with animated skeletons
+10. **Custom Modals**: Replace browser alert()/confirm() with themed modals
+11. **Progressive Image Loading**: Blur-up effect for exercise images
+12. **Service Worker Optimization**: Improve cache strategy and versioning
+
+### Security Note
+⚠️ **Action Required**: Supabase credentials currently in source code should be moved to environment variables (.env file) for production deployments.
+
+---
+
 ## 📞 Need Help?
 
 - **Issues/Bugs**: https://github.com/pr103183/Workout_Tracker_V2/issues
@@ -930,6 +1014,6 @@ The architecture ensures users can track workouts anywhere, anytime, with their 
 
 ---
 
-**Last Updated**: January 2026
-**Version**: 1.0.0
+**Last Updated**: January 2, 2026
+**Version**: 2.0.0
 **Author**: Built with Claude Code
