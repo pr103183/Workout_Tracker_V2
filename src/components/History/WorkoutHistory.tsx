@@ -2,9 +2,11 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, WorkoutLog, WorkoutLogSet } from '../../lib/db';
 import { useAuth } from '../../contexts/AuthContext';
+import { CardioHistory } from '../Cardio/CardioHistory';
 
 export const WorkoutHistory: React.FC = () => {
   const { user } = useAuth();
+  const [viewType, setViewType] = useState<'strength' | 'cardio'>('strength');
   const [selectedLog, setSelectedLog] = useState<WorkoutLog | null>(null);
   const [editingSet, setEditingSet] = useState<WorkoutLogSet | null>(null);
   const [editWeight, setEditWeight] = useState<number>(0);
@@ -180,9 +182,50 @@ export const WorkoutHistory: React.FC = () => {
     return <div className="text-center py-8">Loading history...</div>;
   }
 
+  // If viewing cardio, render CardioHistory component
+  if (viewType === 'cardio') {
+    return (
+      <div>
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => setViewType('strength')}
+              className="btn btn-secondary"
+            >
+              💪 Strength Training
+            </button>
+            <button
+              onClick={() => setViewType('cardio')}
+              className="btn btn-primary"
+            >
+              🏃 Cardio
+            </button>
+          </div>
+        </div>
+        <CardioHistory />
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-6">
-      <h2 className="text-2xl font-bold mb-6">Workout History</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Workout History</h2>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setViewType('strength')}
+            className="btn btn-primary"
+          >
+            💪 Strength Training
+          </button>
+          <button
+            onClick={() => setViewType('cardio')}
+            className="btn btn-secondary"
+          >
+            🏃 Cardio
+          </button>
+        </div>
+      </div>
 
       {logs && logs.length > 0 && (
         <div className="card mb-6">

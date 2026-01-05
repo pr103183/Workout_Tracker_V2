@@ -20,7 +20,8 @@
       "Bash(npm install:*)",
       "Bash(git checkout:*)",
       "Bash(bash:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(wc:*)"
     ]
   }
 }

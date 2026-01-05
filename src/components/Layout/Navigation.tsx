@@ -10,6 +10,7 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }
     { id: 'workouts', label: 'Workouts', icon: '💪' },
     { id: 'exercises', label: 'Exercises', icon: '🏋️' },
     { id: 'log', label: 'Log Workout', icon: '📝' },
+    { id: 'cardio', label: 'Cardio', icon: '🏃' },
     { id: 'history', label: 'History', icon: '📊' },
     { id: 'progress', label: 'Progress', icon: '📈' },
     { id: 'plan', label: 'Plan', icon: '📅' },

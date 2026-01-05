@@ -85,6 +85,22 @@ export interface PlannedWorkout {
   _synced?: boolean;
 }
 
+export interface CardioLog {
+  id: string;
+  user_id: string;
+  activity_type: 'run' | 'cycle' | 'swim' | 'walk' | 'hike' | 'row' | 'elliptical' | 'other';
+  started_at: string;
+  completed_at: string | null;
+  duration_seconds: number; // Total duration in seconds
+  distance_miles?: number; // Optional distance
+  calories?: number; // Optional calories burned
+  avg_heart_rate?: number; // Optional average heart rate
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  _synced?: boolean;
+}
+
 export class WorkoutTrackerDB extends Dexie {
   profiles!: Table<Profile>;
   exercises!: Table<Exercise>;
@@ -93,6 +109,7 @@ export class WorkoutTrackerDB extends Dexie {
   workout_logs!: Table<WorkoutLog>;
   workout_log_sets!: Table<WorkoutLogSet>;
   planned_workouts!: Table<PlannedWorkout>;
+  cardio_logs!: Table<CardioLog>;
 
   constructor() {
     super('WorkoutTrackerDB');
@@ -104,6 +121,7 @@ export class WorkoutTrackerDB extends Dexie {
       workout_logs: 'id, user_id, workout_id, started_at, completed_at',
       workout_log_sets: 'id, workout_log_id, exercise_id, set_number',
       planned_workouts: 'id, user_id, workout_id, scheduled_date, completed',
+      cardio_logs: 'id, user_id, activity_type, started_at, completed_at',
     });
   }
 }

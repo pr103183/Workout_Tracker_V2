@@ -15,11 +15,12 @@ import { WorkoutHistory } from './components/History/WorkoutHistory';
 import { WorkoutPlanner } from './components/Planning/WorkoutPlanner';
 import { Progress } from './components/Progress/Progress';
 import { Settings } from './components/Settings/Settings';
+import { CardioLog } from './components/Cardio/CardioLog';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Workout, Exercise } from './lib/db';
 import { useSwipe } from './hooks/useSwipe';
 
-const TABS = ['workouts', 'exercises', 'log', 'history', 'progress', 'plan', 'settings'];
+const TABS = ['workouts', 'exercises', 'log', 'cardio', 'history', 'progress', 'plan', 'settings'];
 
 const AuthenticatedApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState('workouts');
@@ -130,6 +131,8 @@ const AuthenticatedApp: React.FC = () => {
         )}
 
         {activeTab === 'log' && <LogWorkout />}
+
+        {activeTab === 'cardio' && <CardioLog />}
 
         {activeTab === 'history' && <WorkoutHistory />}
 
