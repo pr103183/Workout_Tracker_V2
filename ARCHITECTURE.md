@@ -938,11 +938,13 @@ The architecture ensures users can track workouts anywhere, anytime, with their 
 
 ### Workout Experience Enhancements
 - **Custom Reps Per Set**: Different rep targets for each set (e.g., 16, 12, 8)
-- **Exercise Reordering**: Drag-and-drop style reordering with up/down arrows
+- **Exercise Reordering**: Drag-and-drop style reordering with up/down arrows during workout logging
+- **In-Progress Workout Editing**: Add/remove exercises, add/remove sets, reorder exercises during active workouts
 - **Start from Previous**: Pre-populate new workouts with previous weights/reps
 - **Auto-Fill Weights**: Shows last workout data with "Use Same" and "+5 lbs" buttons
-- **Bodyweight Exercises**: Hide weight input for bodyweight movements
+- **Bodyweight Exercises**: Hide weight input for bodyweight movements (Pull-ups, Dips, etc.)
 - **Exercise Form Guides**: Form cues, common mistakes, muscle activation, safety tips
+- **Real-time Saving**: All workout changes save immediately to prevent data loss
 
 ### User Interface Improvements
 - **Search & Filter**: Search workouts/history, filter by date range and workout type
@@ -1014,6 +1016,42 @@ The architecture ensures users can track workouts anywhere, anytime, with their 
 
 ---
 
-**Last Updated**: January 2, 2026
-**Version**: 2.0.0
+**Last Updated**: January 12, 2026
+**Version**: 2.0.1
 **Author**: Built with Claude Code
+
+---
+
+## 🐛 Recent Bug Fixes (January 12, 2026)
+
+### Critical Fixes
+1. **Persistent In-Progress Workout Bug**
+   - **Issue**: Workouts would reappear after pressing "Cancel" due to incomplete state cleanup
+   - **Fix**: Added `setWorkoutExercises([])` to `handleCancelWorkout()` to clear all state
+   - **File**: src/components/WorkoutLog/LogWorkout.tsx:295
+
+2. **Set Ordering Issues**
+   - **Issue**: Sets displayed in random order (3,2,1 or 1,3,2) due to missing numeric sort
+   - **Fix**: Changed `.sort((a, b) => a.set_number - b.set_number)` to `Number(a.set_number) - Number(b.set_number)` to ensure numeric comparison
+   - **File**: src/components/WorkoutLog/LogWorkout.tsx:546
+
+3. **Duplicate Exercises in Workout Log**
+   - **Issue**: Same exercise appeared multiple times due to duplicate workout_exercises entries
+   - **Fix**: Added deduplication using Map and changed React key from `index` to `exercise_id`
+   - **Files**: src/components/WorkoutLog/LogWorkout.tsx:537-540, 581
+
+4. **Bodyweight Exercises Showing Weight Input**
+   - **Issue**: Weight input appeared for bodyweight exercises (Pull-ups, Dips) when exercise object wasn't loaded
+   - **Fix**: Improved conditional check from `!exercise?.is_bodyweight` to `exercise && !exercise.is_bodyweight`
+   - **File**: src/components/WorkoutLog/LogWorkout.tsx:724
+
+### Feature Additions
+5. **Exercise Reordering During Workouts**
+   - **Added**: Up/Down arrow buttons to reorder exercises during active workout logging
+   - **Implementation**: `handleMoveExercise()` function updates order_index and persists to database
+   - **Files**: src/components/WorkoutLog/LogWorkout.tsx:415-441, 618-632
+
+6. **Real-time Set Editing**
+   - **Enhancement**: `handleUpdateSet()` now saves changes immediately to database instead of only on blur
+   - **Benefit**: Prevents data loss if user navigates away before field loses focus
+   - **File**: src/components/WorkoutLog/LogWorkout.tsx:227-240

@@ -224,12 +224,19 @@ export const LogWorkout: React.FC = () => {
     setSelectedPreviousLog(null); // Reset selection
   };
 
-  const handleUpdateSet = (setId: string, field: 'reps' | 'weight', value: number) => {
+  const handleUpdateSet = async (setId: string, field: 'reps' | 'weight', value: number) => {
+    // Update local state immediately
     setLogSets(prev =>
       prev.map(set =>
         set.id === setId ? { ...set, [field]: value } : set
       )
     );
+
+    // Save to database immediately for real-time persistence
+    await db.workout_log_sets.update(setId, {
+      [field]: value,
+      _synced: false,
+    });
   };
 
   const handleToggleSetComplete = async (setId: string) => {
@@ -285,6 +292,7 @@ export const LogWorkout: React.FC = () => {
       await db.workout_logs.delete(currentLog.id);
       setSelectedWorkout(null);
       setCurrentLog(null);
+      setWorkoutExercises([]);
       setLogSets([]);
       setNotes('');
     }
@@ -358,6 +366,78 @@ export const LogWorkout: React.FC = () => {
         _synced: false,
       });
     }
+  };
+
+  const handleAddSet = async (exerciseId: string) => {
+    if (!currentLog) return;
+
+    const exerciseSets = logSets.filter(s => s.exercise_id === exerciseId);
+    const newSetNumber = exerciseSets.length + 1;
+    const workoutExercise = workoutExercises.find(we => we.exercise_id === exerciseId);
+
+    const newSet: WorkoutLogSet = {
+      id: crypto.randomUUID(),
+      workout_log_id: currentLog.id,
+      exercise_id: exerciseId,
+      set_number: newSetNumber,
+      reps: workoutExercise?.reps || 10,
+      weight: 0,
+      completed: false,
+      created_at: new Date().toISOString(),
+      _synced: false,
+    };
+
+    await db.workout_log_sets.add(newSet);
+    setLogSets([...logSets, newSet]);
+  };
+
+  const handleRemoveSet = async (setId: string) => {
+    if (confirm('Remove this set?')) {
+      await db.workout_log_sets.delete(setId);
+      setLogSets(logSets.filter(s => s.id !== setId));
+    }
+  };
+
+  const handleRemoveExercise = async (exerciseId: string) => {
+    const exercise = exercises.find(e => e.id === exerciseId);
+    if (confirm(`Remove "${exercise?.name}" from this workout?`)) {
+      // Remove all sets for this exercise
+      const setsToRemove = logSets.filter(s => s.exercise_id === exerciseId);
+      for (const set of setsToRemove) {
+        await db.workout_log_sets.delete(set.id);
+      }
+
+      setLogSets(logSets.filter(s => s.exercise_id !== exerciseId));
+      setWorkoutExercises(workoutExercises.filter(we => we.exercise_id !== exerciseId));
+    }
+  };
+
+  const handleMoveExercise = (exerciseId: string, direction: 'up' | 'down') => {
+    const currentIndex = workoutExercises.findIndex(we => we.exercise_id === exerciseId);
+    if (currentIndex === -1) return;
+
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= workoutExercises.length) return;
+
+    const updatedExercises = [...workoutExercises];
+    const [movedExercise] = updatedExercises.splice(currentIndex, 1);
+    updatedExercises.splice(newIndex, 0, movedExercise);
+
+    // Update order_index for all exercises
+    const reorderedExercises = updatedExercises.map((we, index) => ({
+      ...we,
+      order_index: index,
+    }));
+
+    setWorkoutExercises(reorderedExercises);
+
+    // Update the database
+    reorderedExercises.forEach(async (we) => {
+      await db.workout_exercises.update(we.id, {
+        order_index: we.order_index,
+        _synced: false,
+      });
+    });
   };
 
   if (!currentLog && !selectedWorkout) {
@@ -482,9 +562,16 @@ export const LogWorkout: React.FC = () => {
     );
   }
 
-  const groupedSets = workoutExercises.map(we => {
+  // Deduplicate workout exercises by exercise_id and sort by order_index
+  const uniqueWorkoutExercises = Array.from(
+    new Map(workoutExercises.map(we => [we.exercise_id, we])).values()
+  ).sort((a, b) => a.order_index - b.order_index);
+
+  const groupedSets = uniqueWorkoutExercises.map(we => {
     const exercise = exercises.find(e => e.id === we.exercise_id);
-    const sets = logSets.filter(s => s.exercise_id === we.exercise_id);
+    const sets = logSets
+      .filter(s => s.exercise_id === we.exercise_id)
+      .sort((a, b) => Number(a.set_number) - Number(b.set_number)); // Ensure numeric sort
     return { exercise, workoutExercise: we, sets };
   });
 
@@ -515,17 +602,42 @@ export const LogWorkout: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-          {groupedSets.map(({ exercise, workoutExercise, sets }, index) => {
+          {groupedSets.map(({ exercise, workoutExercise, sets }) => {
             const prevData = previousData.get(workoutExercise.exercise_id);
 
             return (
-              <div key={index} className="card">
+              <div key={workoutExercise.exercise_id} className="card">
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold mb-1">{exercise?.name}</h3>
                     <p className="text-sm text-gray-400">
                       {workoutExercise.sets} sets × {workoutExercise.reps} reps | Rest: {workoutExercise.rest_seconds}s
                     </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleMoveExercise(workoutExercise.exercise_id, 'up')}
+                      className="text-gray-400 hover:text-white text-sm px-2"
+                      title="Move up"
+                      disabled={workoutExercise.order_index === 0}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      onClick={() => handleMoveExercise(workoutExercise.exercise_id, 'down')}
+                      className="text-gray-400 hover:text-white text-sm px-2"
+                      title="Move down"
+                      disabled={workoutExercise.order_index === workoutExercises.length - 1}
+                    >
+                      ↓
+                    </button>
+                    <button
+                      onClick={() => handleRemoveExercise(workoutExercise.exercise_id)}
+                      className="text-red-500 hover:text-red-400 text-sm"
+                      title="Remove exercise"
+                    >
+                      Remove
+                    </button>
                   </div>
                 </div>
 
@@ -586,6 +698,13 @@ export const LogWorkout: React.FC = () => {
                           <span className="font-medium w-16">Set {set.set_number}</span>
 
                           <div className="flex-1 flex gap-2">
+                            <button
+                              onClick={() => handleRemoveSet(set.id)}
+                              className="text-red-500 hover:text-red-400 text-xs px-2"
+                              title="Remove set"
+                            >
+                              ✕
+                            </button>
                             <div className="flex-1">
                               <input
                                 type="number"
@@ -602,7 +721,7 @@ export const LogWorkout: React.FC = () => {
                                 </div>
                               )}
                             </div>
-                            {!exercise?.is_bodyweight && (
+                            {exercise && !exercise.is_bodyweight && (
                               <div className="flex-1">
                                 <input
                                   type="number"
@@ -627,6 +746,14 @@ export const LogWorkout: React.FC = () => {
                     );
                   })}
                 </div>
+
+                {/* Add Set Button */}
+                <button
+                  onClick={() => handleAddSet(workoutExercise.exercise_id)}
+                  className="btn btn-secondary text-sm w-full mt-3"
+                >
+                  + Add Set
+                </button>
               </div>
             );
           })}

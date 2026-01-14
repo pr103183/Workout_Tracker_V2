@@ -33,6 +33,14 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSave, onCan
   }, [workout]);
 
   const handleAddExercise = (exercise: Exercise) => {
+    // Check if exercise already exists in the workout
+    const alreadyExists = selectedExercises.some(we => we.exercise_id === exercise.id);
+
+    if (alreadyExists) {
+      alert(`"${exercise.name}" is already in this workout. Each exercise can only be added once.`);
+      return;
+    }
+
     const newExercise: WorkoutExercise = {
       id: crypto.randomUUID(),
       workout_id: workout?.id || '',

@@ -9,7 +9,14 @@ A Progressive Web App (PWA) for tracking workouts with offline-first architectur
 - **Automatic sync** to Supabase when online
 - **Create custom workouts** with exercises, sets, reps, and rest times
 - **Log workout sessions** with real-time tracking of sets, reps, and weight
+- **Edit workouts in progress** - add/remove exercises, add/remove sets, reorder exercises
 - **Exercise library** with 12+ common exercises and custom exercise support
+- **Custom reps per set** - configure different rep targets for each set
+- **Exercise reordering** - drag exercises to customize workout order
+- **Start from previous workout** - use weights and reps from your last session
+- **Progressive overload** - automatically increase weights by 5 lbs
+- **Cardio workout tracking** - log cardio sessions with duration and notes
+- **Search and filter** - find workouts and exercises quickly
 - **Workout history** with detailed statistics and progress tracking
 - **Workout planning** with a 7-day calendar view
 - **Mobile-responsive** design optimized for all devices
@@ -128,13 +135,21 @@ You can also create custom exercises in the **Exercises** tab.
 
 1. Go to the **Log Workout** tab
 2. Select a workout to perform
-3. Click "Start Workout"
-4. For each set:
+3. Optionally choose "Start from Previous Workout" to load weights from your last session
+4. Click "Start Workout"
+5. For each set:
    - Enter the reps performed
-   - Enter the weight used
+   - Enter the weight used (for weighted exercises)
    - Check the box when the set is complete
-5. Add optional notes
-6. Click "Finish" to complete the workout
+   - All changes save automatically in real-time
+6. **During the workout, you can:**
+   - Add or remove sets using the "+ Add Set" button or "✕" on each set
+   - Remove entire exercises with the "Remove" button
+   - Reorder exercises using the up/down arrows (↑ ↓)
+   - Use "Use Same" to copy weights from your previous workout
+   - Use "+5 lbs" for progressive overload
+7. Add optional notes
+8. Click "Finish" to complete the workout or "Cancel" to discard
 
 ### Viewing History
 
