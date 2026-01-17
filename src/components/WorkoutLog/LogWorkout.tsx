@@ -20,9 +20,16 @@ export const LogWorkout: React.FC = () => {
   const [previousData, setPreviousData] = useState<Map<string, PreviousSetData>>(new Map());
   const [showPreviousWorkouts, setShowPreviousWorkouts] = useState(false);
   const [selectedPreviousLog, setSelectedPreviousLog] = useState<WorkoutLog | null>(null);
+  const [showExercisePicker, setShowExercisePicker] = useState(false);
 
   const workouts = useLiveQuery(
     () => db.workouts.where('user_id').equals(user?.id || '').toArray(),
+    [user?.id]
+  );
+
+  // Load all exercises for the exercise picker
+  const allExercises = useLiveQuery(
+    () => db.exercises.where('user_id').equals(user?.id || '').toArray(),
     [user?.id]
   );
 
@@ -71,11 +78,19 @@ export const LogWorkout: React.FC = () => {
         }
 
         // Load workout exercises
-        const exercises = await db.workout_exercises
+        const workoutExs = await db.workout_exercises
           .where('workout_id')
           .equals(mostRecent.workout_id)
           .toArray();
-        setWorkoutExercises(exercises);
+        setWorkoutExercises(workoutExs);
+
+        // Load the actual Exercise objects for exercise details (is_bodyweight, etc.)
+        const exerciseIds = workoutExs.map(we => we.exercise_id);
+        const exs = await db.exercises
+          .where('id')
+          .anyOf(exerciseIds)
+          .toArray();
+        setExercises(exs);
 
         // Load the sets
         const sets = await db.workout_log_sets
@@ -244,8 +259,15 @@ export const LogWorkout: React.FC = () => {
     if (!set) return;
 
     const updated = { ...set, completed: !set.completed };
-    await db.workout_log_sets.update(setId, { completed: updated.completed });
+
+    // Update local state immediately
     setLogSets(prev => prev.map(s => s.id === setId ? updated : s));
+
+    // Save to database immediately with _synced flag
+    await db.workout_log_sets.update(setId, {
+      completed: updated.completed,
+      _synced: false,
+    });
   };
 
   const handleSaveSet = async (setId: string) => {
@@ -401,25 +423,37 @@ export const LogWorkout: React.FC = () => {
   const handleRemoveExercise = async (exerciseId: string) => {
     const exercise = exercises.find(e => e.id === exerciseId);
     if (confirm(`Remove "${exercise?.name}" from this workout?`)) {
-      // Remove all sets for this exercise
+      // Remove all sets for this exercise from database
       const setsToRemove = logSets.filter(s => s.exercise_id === exerciseId);
       for (const set of setsToRemove) {
         await db.workout_log_sets.delete(set.id);
       }
 
+      // Remove workout_exercise entries from database (not just state)
+      const workoutExsToRemove = workoutExercises.filter(we => we.exercise_id === exerciseId);
+      for (const we of workoutExsToRemove) {
+        await db.workout_exercises.delete(we.id);
+      }
+
+      // Update state
       setLogSets(logSets.filter(s => s.exercise_id !== exerciseId));
       setWorkoutExercises(workoutExercises.filter(we => we.exercise_id !== exerciseId));
     }
   };
 
-  const handleMoveExercise = (exerciseId: string, direction: 'up' | 'down') => {
-    const currentIndex = workoutExercises.findIndex(we => we.exercise_id === exerciseId);
+  const handleMoveExercise = async (exerciseId: string, direction: 'up' | 'down') => {
+    // Deduplicate first, same as in render
+    const uniqueExercises = Array.from(
+      new Map(workoutExercises.map(we => [we.exercise_id, we])).values()
+    ).sort((a, b) => a.order_index - b.order_index);
+
+    const currentIndex = uniqueExercises.findIndex(we => we.exercise_id === exerciseId);
     if (currentIndex === -1) return;
 
     const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    if (newIndex < 0 || newIndex >= workoutExercises.length) return;
+    if (newIndex < 0 || newIndex >= uniqueExercises.length) return;
 
-    const updatedExercises = [...workoutExercises];
+    const updatedExercises = [...uniqueExercises];
     const [movedExercise] = updatedExercises.splice(currentIndex, 1);
     updatedExercises.splice(newIndex, 0, movedExercise);
 
@@ -429,15 +463,82 @@ export const LogWorkout: React.FC = () => {
       order_index: index,
     }));
 
-    setWorkoutExercises(reorderedExercises);
+    // Update state with ALL workout exercises (including any duplicates if they exist)
+    // but with updated order_index
+    const updatedAllExercises = workoutExercises.map(we => {
+      const updated = reorderedExercises.find(ue => ue.exercise_id === we.exercise_id);
+      return updated ? { ...we, order_index: updated.order_index } : we;
+    });
 
-    // Update the database
-    reorderedExercises.forEach(async (we) => {
+    setWorkoutExercises(updatedAllExercises);
+
+    // Update the database for each unique exercise
+    for (const we of reorderedExercises) {
       await db.workout_exercises.update(we.id, {
         order_index: we.order_index,
         _synced: false,
       });
-    });
+    }
+  };
+
+  const handleAddExerciseToWorkout = async (exercise: Exercise) => {
+    if (!currentLog || !selectedWorkout) return;
+
+    // Check if exercise already exists in the workout
+    const alreadyExists = workoutExercises.some(we => we.exercise_id === exercise.id);
+    if (alreadyExists) {
+      alert(`"${exercise.name}" is already in this workout.`);
+      return;
+    }
+
+    // Get the max order_index to add at the end
+    const maxOrderIndex = Math.max(...workoutExercises.map(we => we.order_index), -1);
+
+    // Create new workout_exercise
+    const newWorkoutExercise: WorkoutExercise = {
+      id: crypto.randomUUID(),
+      workout_id: selectedWorkout.id,
+      exercise_id: exercise.id,
+      order_index: maxOrderIndex + 1,
+      sets: 3,
+      reps: 10,
+      rest_seconds: 60,
+      created_at: new Date().toISOString(),
+      _synced: false,
+    };
+
+    // Add to database
+    await db.workout_exercises.add(newWorkoutExercise);
+
+    // Create initial sets for this exercise in the current log
+    const initialSets: WorkoutLogSet[] = [];
+    for (let i = 1; i <= 3; i++) {
+      initialSets.push({
+        id: crypto.randomUUID(),
+        workout_log_id: currentLog.id,
+        exercise_id: exercise.id,
+        set_number: i,
+        reps: 10,
+        weight: 0,
+        completed: false,
+        created_at: new Date().toISOString(),
+        _synced: false,
+      });
+    }
+
+    // Add sets to database
+    await db.workout_log_sets.bulkAdd(initialSets);
+
+    // Update state
+    setWorkoutExercises([...workoutExercises, newWorkoutExercise]);
+    setLogSets([...logSets, ...initialSets]);
+
+    // Add exercise to exercises array if not already there
+    if (!exercises.find(e => e.id === exercise.id)) {
+      setExercises([...exercises, exercise]);
+    }
+
+    setShowExercisePicker(false);
   };
 
   if (!currentLog && !selectedWorkout) {
@@ -602,8 +703,10 @@ export const LogWorkout: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-          {groupedSets.map(({ exercise, workoutExercise, sets }) => {
+          {groupedSets.map(({ exercise, workoutExercise, sets }, displayIndex) => {
             const prevData = previousData.get(workoutExercise.exercise_id);
+            const isFirst = displayIndex === 0;
+            const isLast = displayIndex === groupedSets.length - 1;
 
             return (
               <div key={workoutExercise.exercise_id} className="card">
@@ -617,17 +720,17 @@ export const LogWorkout: React.FC = () => {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleMoveExercise(workoutExercise.exercise_id, 'up')}
-                      className="text-gray-400 hover:text-white text-sm px-2"
+                      className="text-gray-400 hover:text-white text-sm px-2 disabled:opacity-30 disabled:cursor-not-allowed"
                       title="Move up"
-                      disabled={workoutExercise.order_index === 0}
+                      disabled={isFirst}
                     >
                       ↑
                     </button>
                     <button
                       onClick={() => handleMoveExercise(workoutExercise.exercise_id, 'down')}
-                      className="text-gray-400 hover:text-white text-sm px-2"
+                      className="text-gray-400 hover:text-white text-sm px-2 disabled:opacity-30 disabled:cursor-not-allowed"
                       title="Move down"
-                      disabled={workoutExercise.order_index === workoutExercises.length - 1}
+                      disabled={isLast}
                     >
                       ↓
                     </button>
@@ -757,6 +860,45 @@ export const LogWorkout: React.FC = () => {
               </div>
             );
           })}
+
+          {/* Add Exercise Button */}
+          {!showExercisePicker && (
+            <button
+              onClick={() => setShowExercisePicker(true)}
+              className="btn btn-primary w-full"
+            >
+              + Add Exercise to Workout
+            </button>
+          )}
+
+          {/* Exercise Picker */}
+          {showExercisePicker && (
+            <div className="card">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Add Exercise</h3>
+                <button
+                  onClick={() => setShowExercisePicker(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="max-h-96 overflow-y-auto space-y-2">
+                {allExercises && allExercises
+                  .filter(ex => !workoutExercises.some(we => we.exercise_id === ex.id))
+                  .map((exercise) => (
+                    <div
+                      key={exercise.id}
+                      onClick={() => handleAddExerciseToWorkout(exercise)}
+                      className="p-3 bg-gray-700 hover:bg-gray-600 rounded-lg cursor-pointer transition-colors"
+                    >
+                      <div className="font-medium">{exercise.name}</div>
+                      <div className="text-sm text-gray-400">{exercise.muscle_group}</div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
 
           <div className="card">
             <label htmlFor="notes" className="label">Workout Notes</label>
