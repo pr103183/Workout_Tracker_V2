@@ -49,8 +49,15 @@ export class SyncService {
       .eq('user_id', userId);
 
     if (remoteExercises) {
-      for (const exercise of remoteExercises) {
-        await db.exercises.put({ ...exercise as any, _synced: true });
+      for (const exercise of remoteExercises as any[]) {
+        // Get existing local record to preserve local-only fields (like is_bodyweight)
+        const existingLocal = await db.exercises.get(exercise.id);
+        const mergedExercise = {
+          ...(existingLocal || {}), // Preserve existing local fields
+          ...exercise,              // Apply remote data
+          _synced: true,
+        };
+        await db.exercises.put(mergedExercise);
       }
     }
   }

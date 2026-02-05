@@ -39,6 +39,11 @@ export interface Database {
           equipment: string
           instructions: string
           is_custom: boolean
+          is_bodyweight: boolean
+          form_cues: string
+          common_mistakes: string
+          muscle_activation: string
+          safety_tips: string
           created_at: string
           updated_at: string
         }
@@ -51,6 +56,11 @@ export interface Database {
           equipment?: string
           instructions?: string
           is_custom?: boolean
+          is_bodyweight?: boolean
+          form_cues?: string
+          common_mistakes?: string
+          muscle_activation?: string
+          safety_tips?: string
           created_at?: string
           updated_at?: string
         }
@@ -63,6 +73,11 @@ export interface Database {
           equipment?: string
           instructions?: string
           is_custom?: boolean
+          is_bodyweight?: boolean
+          form_cues?: string
+          common_mistakes?: string
+          muscle_activation?: string
+          safety_tips?: string
           created_at?: string
           updated_at?: string
         }

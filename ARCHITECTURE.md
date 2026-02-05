@@ -1016,18 +1016,41 @@ The architecture ensures users can track workouts anywhere, anytime, with their 
 
 ---
 
-**Last Updated**: January 12, 2026
-**Version**: 2.0.1
+**Last Updated**: February 5, 2026
+**Version**: 2.0.2
 **Author**: Built with Claude Code
 
 ---
 
-## 🐛 Recent Bug Fixes (January 12, 2026)
+## 🐛 Recent Bug Fixes (February 5, 2026)
 
-### Critical Fixes
-1. **Persistent In-Progress Workout Bug**
+### Critical Fixes (v2.0.2)
+
+1. **Persistent In-Progress Workout Bug - Complete Fix**
+   - **Issue**: Cancelled workouts would reappear on every app open because they were only deleted from local IndexedDB but still existed in Supabase. The sync service would re-pull them from remote.
+   - **Root Cause**: `handleCancelWorkout()` only deleted from local DB; sync would restore from remote
+   - **Fix**: Added Supabase delete calls before local deletes to remove from both local AND remote databases
+   - **Additional Fix**: Added orphan cleanup in resume flow - if a workout log references a deleted workout, clean it up from both local and remote
+   - **File**: src/components/WorkoutLog/LogWorkout.tsx:309-334
+
+2. **Bodyweight Exercises Showing Weight Input - Complete Fix**
+   - **Issue**: Weight input would appear for bodyweight exercises after sync because the `is_bodyweight` field was being overwritten
+   - **Root Cause**: The Supabase `exercises` table doesn't have an `is_bodyweight` column. When sync pulled remote data and did `db.exercises.put()`, it overwrote local records, losing the `is_bodyweight` field
+   - **Fix**: Updated `syncExercises()` to merge remote data with existing local records instead of overwriting, preserving local-only fields like `is_bodyweight`
+   - **File**: src/lib/sync.ts:46-57
+
+3. **Duplicate Exercises in Workout Log - Complete Fix**
+   - **Issue**: Same exercise would appear multiple times in workout log
+   - **Root Cause**: `workout_exercises` table could contain duplicate entries for the same `exercise_id` after sync
+   - **Fix**: Added proactive deduplication during workout load and resume - detects duplicates, deletes extras from DB, and keeps only unique entries
+   - **Files**: src/components/WorkoutLog/LogWorkout.tsx:81-102, 148-169
+
+### Previous Fixes (January 12, 2026)
+
+4. **Persistent In-Progress Workout Bug (Partial)**
    - **Issue**: Workouts would reappear after pressing "Cancel" due to incomplete state cleanup
    - **Fix**: Added `setWorkoutExercises([])` to `handleCancelWorkout()` to clear all state
+   - **Note**: This was later discovered to be incomplete - see fix #1 above
    - **File**: src/components/WorkoutLog/LogWorkout.tsx:295
 
 2. **Set Ordering Issues**

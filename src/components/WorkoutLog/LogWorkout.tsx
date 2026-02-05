@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Workout, WorkoutLog, WorkoutLogSet, WorkoutExercise, Exercise } from '../../lib/db';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 
 interface PreviousSetData {
   exercise_id: string;
@@ -69,28 +70,59 @@ export const LogWorkout: React.FC = () => {
           (a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
         )[0];
 
-        setCurrentLog(mostRecent);
-
-        // Load the workout
+        // Load the workout - if it doesn't exist, the in-progress log is orphaned
         const workout = await db.workouts.get(mostRecent.workout_id);
-        if (workout) {
-          setSelectedWorkout(workout);
+        if (!workout) {
+          // Clean up orphaned workout log from both local and remote
+          console.log('Cleaning up orphaned in-progress workout log:', mostRecent.id);
+          await supabase.from('workout_log_sets').delete().eq('workout_log_id', mostRecent.id);
+          await supabase.from('workout_logs').delete().eq('id', mostRecent.id);
+          await db.workout_log_sets.where('workout_log_id').equals(mostRecent.id).delete();
+          await db.workout_logs.delete(mostRecent.id);
+          return;
         }
 
-        // Load workout exercises
-        const workoutExs = await db.workout_exercises
+        setCurrentLog(mostRecent);
+        setSelectedWorkout(workout);
+
+        // Load workout exercises and deduplicate by exercise_id
+        const workoutExsRaw = await db.workout_exercises
           .where('workout_id')
           .equals(mostRecent.workout_id)
           .toArray();
+
+        // Deduplicate: keep only one WorkoutExercise per exercise_id
+        const workoutExsMap = new Map<string, WorkoutExercise>();
+        const duplicateIds: string[] = [];
+        for (const we of workoutExsRaw) {
+          if (workoutExsMap.has(we.exercise_id)) {
+            // This is a duplicate - mark for deletion
+            duplicateIds.push(we.id);
+          } else {
+            workoutExsMap.set(we.exercise_id, we);
+          }
+        }
+
+        // Clean up duplicates from local DB
+        if (duplicateIds.length > 0) {
+          console.log('Cleaning up duplicate workout_exercises:', duplicateIds);
+          for (const id of duplicateIds) {
+            await db.workout_exercises.delete(id);
+          }
+        }
+
+        const workoutExs = Array.from(workoutExsMap.values());
         setWorkoutExercises(workoutExs);
 
         // Load the actual Exercise objects for exercise details (is_bodyweight, etc.)
         const exerciseIds = workoutExs.map(we => we.exercise_id);
-        const exs = await db.exercises
-          .where('id')
-          .anyOf(exerciseIds)
-          .toArray();
-        setExercises(exs);
+        if (exerciseIds.length > 0) {
+          const exs = await db.exercises
+            .where('id')
+            .anyOf(exerciseIds)
+            .toArray();
+          setExercises(exs);
+        }
 
         // Load the sets
         const sets = await db.workout_log_sets
@@ -113,7 +145,28 @@ export const LogWorkout: React.FC = () => {
         .where('workout_id')
         .equals(selectedWorkout.id)
         .toArray()
-        .then(setWorkoutExercises);
+        .then(async (workoutExsRaw) => {
+          // Deduplicate by exercise_id
+          const workoutExsMap = new Map<string, WorkoutExercise>();
+          const duplicateIds: string[] = [];
+          for (const we of workoutExsRaw) {
+            if (workoutExsMap.has(we.exercise_id)) {
+              duplicateIds.push(we.id);
+            } else {
+              workoutExsMap.set(we.exercise_id, we);
+            }
+          }
+
+          // Clean up duplicates from local DB
+          if (duplicateIds.length > 0) {
+            console.log('Cleaning up duplicate workout_exercises:', duplicateIds);
+            for (const id of duplicateIds) {
+              await db.workout_exercises.delete(id);
+            }
+          }
+
+          setWorkoutExercises(Array.from(workoutExsMap.values()));
+        });
     }
   }, [selectedWorkout, currentLog]);
 
@@ -310,13 +363,31 @@ export const LogWorkout: React.FC = () => {
     if (!currentLog) return;
 
     if (confirm('Are you sure you want to cancel this workout? All progress will be lost.')) {
+      // First, delete from remote database to prevent re-sync
+      // Delete sets from remote
+      await supabase
+        .from('workout_log_sets')
+        .delete()
+        .eq('workout_log_id', currentLog.id);
+
+      // Delete the log from remote
+      await supabase
+        .from('workout_logs')
+        .delete()
+        .eq('id', currentLog.id);
+
+      // Then delete from local database
       await db.workout_log_sets.where('workout_log_id').equals(currentLog.id).delete();
       await db.workout_logs.delete(currentLog.id);
+
+      // Clear all state
       setSelectedWorkout(null);
       setCurrentLog(null);
       setWorkoutExercises([]);
+      setExercises([]);
       setLogSets([]);
       setNotes('');
+      setPreviousData(new Map());
     }
   };
 

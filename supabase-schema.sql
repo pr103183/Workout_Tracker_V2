@@ -19,6 +19,11 @@ CREATE TABLE IF NOT EXISTS public.exercises (
     equipment TEXT DEFAULT '',
     instructions TEXT DEFAULT '',
     is_custom BOOLEAN DEFAULT false,
+    is_bodyweight BOOLEAN DEFAULT false,
+    form_cues TEXT DEFAULT '',
+    common_mistakes TEXT DEFAULT '',
+    muscle_activation TEXT DEFAULT '',
+    safety_tips TEXT DEFAULT '',
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );

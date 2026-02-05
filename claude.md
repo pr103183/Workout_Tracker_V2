@@ -8,7 +8,7 @@
 - **Repo:** https://github.com/pr103183/Workout_Tracker_V2
 - **Hosting:** Vercel (auto-deploys on push to main)
 - **Backend:** Supabase (auth + PostgreSQL). Credentials live in `src/lib/supabase.ts` — not in env vars yet.
-- **Version:** 2.0.1 (as of Feb 2026)
+- **Version:** 2.0.2 (as of Feb 2026)
 
 ---
 
@@ -86,8 +86,9 @@ Dexie indexes (from the `stores()` call) are listed in `db.ts`. Notably missing 
 
 - `SyncService` is a singleton (`export const syncService`).
 - `syncAll(userId)` is called (a) on auth state change and (b) every 60 seconds via `setInterval` in `AuthContext`.
-- Each table has its own private method: upload unsynced locals via `supabase.upsert`, then pull all remote rows via `select` and overwrite locals with `_synced: true`.
-- **Known limitation:** no conflict resolution — last-write-wins. No delete sync (deletes are local-only unless the remote row is simply never re-pulled).
+- Each table has its own private method: upload unsynced locals via `supabase.upsert`, then pull all remote rows via `select` and merge with locals.
+- **Important:** The `syncExercises` method merges remote data with existing local records to preserve local-only fields like `is_bodyweight` that don't exist in the Supabase schema.
+- **Known limitation:** no conflict resolution — last-write-wins. No delete sync (deletes are local-only unless explicitly deleted from remote first).
 
 ---
 
@@ -119,7 +120,13 @@ allExercises      – useLiveQuery of every Exercise for the picker (separate fr
 
 ### Cancel flow
 
-`handleCancelWorkout` must clear **all** state: `selectedWorkout`, `currentLog`, `workoutExercises`, `logSets`, `notes`. It also deletes the `workout_log` and all its `workout_log_sets` from the database. The `workoutExercises` state clear was added after a bug where cancelled workouts kept reappearing.
+`handleCancelWorkout` must clear **all** state: `selectedWorkout`, `currentLog`, `workoutExercises`, `exercises`, `logSets`, `notes`, `previousData`. It also deletes the `workout_log` and all its `workout_log_sets` from **both** the local database AND Supabase remote. This is critical — if only local is deleted, the sync service will re-pull the cancelled workout from remote, causing it to reappear.
+
+**Past bug (Feb 2026):** Cancelled workouts kept reappearing because they were only deleted locally. The fix required adding Supabase delete calls before local deletes:
+```ts
+await supabase.from('workout_log_sets').delete().eq('workout_log_id', currentLog.id);
+await supabase.from('workout_logs').delete().eq('id', currentLog.id);
+```
 
 ### Bodyweight exercise guard
 
@@ -221,11 +228,12 @@ Any custom exercise can also be marked bodyweight via the checkbox in `ExerciseF
 
 1. **Bundle size** ~877 KB — Recharts is the main contributor. Code-splitting not yet implemented.
 2. **O(n²) queries** in `fetchPreviousData` inside LogWorkout — loads all logs, then all sets for each, in a loop.
-3. **No delete sync** — deletions are local only. If a row is deleted locally but still exists remotely, the next sync will re-pull it.
+3. **Partial delete sync** — `handleCancelWorkout` now deletes from both local and remote, but general deletions elsewhere still lack sync. If a row is deleted locally without explicit remote deletion, the next sync will re-pull it.
 4. **No conflict resolution** — last-write-wins on upsert.
 5. **Missing DB indexes** — `[user_id, completed_at]` and `[workout_log_id, exercise_id]` would speed up common queries.
 6. **Supabase credentials in source** — should move to `.env` for production.
 7. **browser `alert()`/`confirm()`** used for confirmations — should be replaced with themed modals.
+8. **Supabase schema mismatch** — `is_bodyweight` field exists in local Dexie but not in Supabase. Sync service now merges to preserve it, but ideally the Supabase schema should be updated to include it.
 
 ---
 
@@ -247,3 +255,37 @@ Output dir: `dist/`
 5. **Delete from DB, not just state**, when removing exercises during a workout. State is ephemeral; the resume effect re-fetches from DB on every app open.
 6. **Load Exercise detail objects explicitly on resume.** The `workoutExercises` table only has `exercise_id`; the `is_bodyweight` flag (and name, etc.) lives on the `exercises` table and must be fetched separately.
 7. **`Number()` wrap numeric sorts from IndexedDB.** `set_number` can arrive as a string; `"9" > "10"` lexicographically.
+8. **Delete from remote before local** when cancelling workouts. If only local is deleted, sync will re-pull the remote record.
+9. **Merge, don't overwrite** when syncing exercises. The Supabase `exercises` table doesn't have `is_bodyweight`, so overwriting local with remote data would lose that field.
+10. **Clean up duplicates proactively.** The resume flow and workout load effects now deduplicate `workout_exercises` and delete the extras from the database.
+11. **Clean up orphaned workout logs.** If a workout log references a workout that no longer exists, delete it from both local and remote during resume.
+
+---
+
+## Testing Skill
+
+A `/test` skill is available at `.claude/skills/test/SKILL.md` that provides a comprehensive checklist for testing the app for known bugs and edge cases. **Run this skill after making changes to catch regressions.**
+
+### Using the Tester
+
+Invoke with `/test` to get a structured testing checklist covering:
+- Workout log resume behavior
+- Bodyweight exercise handling
+- Duplicate exercise prevention
+- Set management
+- Exercise reordering
+- Sync behavior
+
+### Adding to the Tester
+
+**IMPORTANT:** When fixing a bug, always add a corresponding test case to the tester skill. This ensures the bug doesn't regress in future changes.
+
+To add a test case:
+1. Open `.claude/skills/test/SKILL.md`
+2. Add a checkbox item under the appropriate category
+3. Include what to verify and what the expected behavior should be
+
+Example:
+```markdown
+- [ ] Verify [specific behavior] works correctly after [scenario]
+```
