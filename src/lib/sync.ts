@@ -52,9 +52,12 @@ export class SyncService {
       for (const exercise of remoteExercises as any[]) {
         // Get existing local record to preserve local-only fields (like is_bodyweight)
         const existingLocal = await db.exercises.get(exercise.id);
+
+        // Merge: start with remote data, then explicitly preserve local-only fields
         const mergedExercise = {
-          ...(existingLocal || {}), // Preserve existing local fields
-          ...exercise,              // Apply remote data
+          ...exercise,              // Apply remote data first
+          // Preserve local-only fields that don't exist in Supabase schema
+          is_bodyweight: existingLocal?.is_bodyweight ?? exercise.is_bodyweight ?? false,
           _synced: true,
         };
         await db.exercises.put(mergedExercise);

@@ -73,8 +73,24 @@ export const LogWorkout: React.FC = () => {
         // Load the workout - if it doesn't exist, the in-progress log is orphaned
         const workout = await db.workouts.get(mostRecent.workout_id);
         if (!workout) {
-          // Clean up orphaned workout log from both local and remote
-          console.log('Cleaning up orphaned in-progress workout log:', mostRecent.id);
+          // Clean up ALL orphaned in-progress workout logs (not just this one)
+          console.log('Cleaning up orphaned in-progress workout logs');
+          for (const log of inProgressLogs) {
+            await supabase.from('workout_log_sets').delete().eq('workout_log_id', log.id);
+            await supabase.from('workout_logs').delete().eq('id', log.id);
+            await db.workout_log_sets.where('workout_log_id').equals(log.id).delete();
+            await db.workout_logs.delete(log.id);
+          }
+          return;
+        }
+
+        // Check if this workout is too old (more than 24 hours) - likely stale/corrupted
+        const startedAt = new Date(mostRecent.started_at).getTime();
+        const now = Date.now();
+        const hoursOld = (now - startedAt) / (1000 * 60 * 60);
+
+        if (hoursOld > 24) {
+          console.log('Cleaning up stale in-progress workout (>24 hours old):', mostRecent.id);
           await supabase.from('workout_log_sets').delete().eq('workout_log_id', mostRecent.id);
           await supabase.from('workout_logs').delete().eq('id', mostRecent.id);
           await db.workout_log_sets.where('workout_log_id').equals(mostRecent.id).delete();

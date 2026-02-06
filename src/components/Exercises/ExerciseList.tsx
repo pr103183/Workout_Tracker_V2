@@ -80,8 +80,33 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({ onCreateExercise, on
       }
     };
 
+    // Fix bodyweight flag for exercises that should be bodyweight
+    const migrateBodyweightFlag = async () => {
+      if (!user) return;
+
+      const bodyweightExerciseNames = ['Pull-ups', 'Tricep Dips', 'Plank'];
+
+      for (const name of bodyweightExerciseNames) {
+        const exercises = await db.exercises
+          .where('user_id')
+          .equals(user.id)
+          .filter(ex => ex.name === name && !ex.is_bodyweight)
+          .toArray();
+
+        for (const exercise of exercises) {
+          console.log('Fixing bodyweight flag for:', exercise.name);
+          await db.exercises.update(exercise.id, {
+            is_bodyweight: true,
+            updated_at: new Date().toISOString(),
+            _synced: false,
+          });
+        }
+      }
+    };
+
     initializeDefaultExercises();
     migrateArmsCategory();
+    migrateBodyweightFlag();
   }, [user]);
 
   const muscleGroups = useMemo(
