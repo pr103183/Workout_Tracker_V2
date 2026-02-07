@@ -2,6 +2,25 @@
 
 This document tracks all known sync issues and tests to verify sync is working properly.
 
+---
+
+## PREREQUISITE: Run Migration First!
+
+**Before sync will work, you MUST run the migration to add missing columns to Supabase.**
+
+1. Go to Supabase Dashboard: https://iqavqgnbviuzmvzwiiqg.supabase.co
+2. Open SQL Editor
+3. Copy and paste the contents of `supabase-migration-add-exercise-columns.sql`
+4. Click "Run"
+5. Verify the columns were added (query results should show all columns)
+
+If you skip this step, you'll get errors like:
+```
+Could not find the 'common_mistakes' column of 'exercises' in the schema cache
+```
+
+---
+
 **IMPORTANT**: The Supabase database schema may differ from what's defined in `supabase-schema.sql`. The schema file shows the *intended* structure, but the actual database may have been created with fewer columns. Always sync ONLY the columns that exist in the actual database.
 
 ---

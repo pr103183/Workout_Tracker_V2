@@ -21,7 +21,12 @@
       "Bash(git checkout:*)",
       "Bash(bash:*)",
       "Bash(npm run dev:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(ls:*)",
+      "Bash(timeout 5 tail:*)",
+      "Bash(exit 0)",
+      "Bash(npx ts-node:*)",
+      "Bash(node -e:*)"
     ]
   }
 }
