@@ -178,15 +178,12 @@ export class SyncService {
     console.log('[Sync] Workout exercises to upload:', unsyncedLocal.length);
 
     for (const workoutExercise of unsyncedLocal) {
+      // Exclude _synced and custom_reps (custom_reps not in Supabase schema yet)
       const { _synced, custom_reps, ...data } = workoutExercise;
-      // Only include custom_reps if it exists and is not empty
-      const dataToUpload = custom_reps && custom_reps.length > 0
-        ? { ...data, custom_reps }
-        : data;
 
       const { error } = await supabase
         .from('workout_exercises')
-        .upsert(dataToUpload as any);
+        .upsert(data as any);
 
       if (error) {
         console.error('[Sync] Workout exercise upload error:', error.message);
