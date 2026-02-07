@@ -85,8 +85,9 @@ export class SyncService {
     console.log('[Sync] Exercises to upload:', unsyncedLocal.length);
 
     for (const exercise of unsyncedLocal) {
-      // Explicitly build upload object with ONLY Supabase-compatible columns
-      // This prevents any extra/misnamed fields from causing errors
+      // ONLY include columns that definitely exist in Supabase
+      // The actual Supabase DB may not have: form_cues, common_mistakes,
+      // muscle_activation, safety_tips, is_bodyweight (these are local-only)
       const dataToUpload = {
         id: exercise.id,
         user_id: exercise.user_id,
@@ -96,11 +97,6 @@ export class SyncService {
         equipment: exercise.equipment || '',
         instructions: exercise.instructions || '',
         is_custom: exercise.is_custom,
-        is_bodyweight: exercise.is_bodyweight ?? false,
-        form_cues: exercise.form_cues || '',
-        common_mistakes: exercise.common_mistakes || '',
-        muscle_activation: exercise.muscle_activation || '',
-        safety_tips: exercise.safety_tips || '',
         created_at: exercise.created_at,
         updated_at: exercise.updated_at,
       };
