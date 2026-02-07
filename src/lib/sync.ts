@@ -85,9 +85,25 @@ export class SyncService {
     console.log('[Sync] Exercises to upload:', unsyncedLocal.length);
 
     for (const exercise of unsyncedLocal) {
-      const { _synced, is_bodyweight, ...exerciseData } = exercise;
-      // Include is_bodyweight if the column exists in Supabase
-      const dataToUpload = { ...exerciseData, is_bodyweight: is_bodyweight ?? false };
+      // Explicitly build upload object with ONLY Supabase-compatible columns
+      // This prevents any extra/misnamed fields from causing errors
+      const dataToUpload = {
+        id: exercise.id,
+        user_id: exercise.user_id,
+        name: exercise.name,
+        description: exercise.description || '',
+        muscle_group: exercise.muscle_group,
+        equipment: exercise.equipment || '',
+        instructions: exercise.instructions || '',
+        is_custom: exercise.is_custom,
+        is_bodyweight: exercise.is_bodyweight ?? false,
+        form_cues: exercise.form_cues || '',
+        common_mistakes: exercise.common_mistakes || '',
+        muscle_activation: exercise.muscle_activation || '',
+        safety_tips: exercise.safety_tips || '',
+        created_at: exercise.created_at,
+        updated_at: exercise.updated_at,
+      };
 
       const { error } = await supabase
         .from('exercises')
@@ -136,10 +152,19 @@ export class SyncService {
     console.log('[Sync] Workouts to upload:', unsyncedLocal.length);
 
     for (const workout of unsyncedLocal) {
-      const { _synced, ...workoutData } = workout;
+      // Explicitly build upload object with ONLY Supabase-compatible columns
+      const dataToUpload = {
+        id: workout.id,
+        user_id: workout.user_id,
+        name: workout.name,
+        description: workout.description || '',
+        created_at: workout.created_at,
+        updated_at: workout.updated_at,
+      };
+
       const { error } = await supabase
         .from('workouts')
-        .upsert(workoutData as any);
+        .upsert(dataToUpload as any);
 
       if (error) {
         console.error('[Sync] Workout upload error:', error.message, 'for:', workout.name);
@@ -178,12 +203,22 @@ export class SyncService {
     console.log('[Sync] Workout exercises to upload:', unsyncedLocal.length);
 
     for (const workoutExercise of unsyncedLocal) {
-      // Exclude _synced and custom_reps (custom_reps not in Supabase schema yet)
-      const { _synced, custom_reps, ...data } = workoutExercise;
+      // Explicitly build upload object with ONLY Supabase-compatible columns
+      // custom_reps is local-only (not in Supabase schema)
+      const dataToUpload = {
+        id: workoutExercise.id,
+        workout_id: workoutExercise.workout_id,
+        exercise_id: workoutExercise.exercise_id,
+        order_index: workoutExercise.order_index,
+        sets: workoutExercise.sets,
+        reps: workoutExercise.reps,
+        rest_seconds: workoutExercise.rest_seconds,
+        created_at: workoutExercise.created_at,
+      };
 
       const { error } = await supabase
         .from('workout_exercises')
-        .upsert(data as any);
+        .upsert(dataToUpload as any);
 
       if (error) {
         console.error('[Sync] Workout exercise upload error:', error.message);
@@ -230,10 +265,21 @@ export class SyncService {
     console.log('[Sync] Workout logs to upload:', unsyncedLocal.length);
 
     for (const log of unsyncedLocal) {
-      const { _synced, ...logData } = log;
+      // Explicitly build upload object with ONLY Supabase-compatible columns
+      const dataToUpload = {
+        id: log.id,
+        user_id: log.user_id,
+        workout_id: log.workout_id,
+        started_at: log.started_at,
+        completed_at: log.completed_at,
+        notes: log.notes || '',
+        created_at: log.created_at,
+        updated_at: log.updated_at,
+      };
+
       const { error } = await supabase
         .from('workout_logs')
-        .upsert(logData as any);
+        .upsert(dataToUpload as any);
 
       if (error) {
         console.error('[Sync] Workout log upload error:', error.message, 'for log:', log.id);
@@ -274,10 +320,21 @@ export class SyncService {
     console.log('[Sync] Workout log sets to upload:', unsyncedLocal.length);
 
     for (const set of unsyncedLocal) {
-      const { _synced, ...setData } = set;
+      // Explicitly build upload object with ONLY Supabase-compatible columns
+      const dataToUpload = {
+        id: set.id,
+        workout_log_id: set.workout_log_id,
+        exercise_id: set.exercise_id,
+        set_number: set.set_number,
+        reps: set.reps,
+        weight: set.weight,
+        completed: set.completed,
+        created_at: set.created_at,
+      };
+
       const { error } = await supabase
         .from('workout_log_sets')
-        .upsert(setData as any);
+        .upsert(dataToUpload as any);
 
       if (error) {
         console.error('[Sync] Set upload error:', error.message);
@@ -324,10 +381,20 @@ export class SyncService {
     console.log('[Sync] Planned workouts to upload:', unsyncedLocal.length);
 
     for (const planned of unsyncedLocal) {
-      const { _synced, ...plannedData } = planned;
+      // Explicitly build upload object with ONLY Supabase-compatible columns
+      const dataToUpload = {
+        id: planned.id,
+        user_id: planned.user_id,
+        workout_id: planned.workout_id,
+        scheduled_date: planned.scheduled_date,
+        completed: planned.completed,
+        created_at: planned.created_at,
+        updated_at: planned.updated_at,
+      };
+
       const { error } = await supabase
         .from('planned_workouts')
-        .upsert(plannedData as any);
+        .upsert(dataToUpload as any);
 
       if (error) {
         console.error('[Sync] Planned workout upload error:', error.message);
@@ -365,14 +432,29 @@ export class SyncService {
     console.log('[Sync] Cardio logs to upload:', unsyncedLocal.length);
 
     for (const cardio of unsyncedLocal) {
-      const { _synced, ...cardioData } = cardio;
+      // Explicitly build upload object with ONLY Supabase-compatible columns
+      const dataToUpload = {
+        id: cardio.id,
+        user_id: cardio.user_id,
+        activity_type: cardio.activity_type,
+        started_at: cardio.started_at,
+        completed_at: cardio.completed_at,
+        duration_seconds: cardio.duration_seconds,
+        distance_miles: cardio.distance_miles,
+        calories: cardio.calories,
+        avg_heart_rate: cardio.avg_heart_rate,
+        notes: cardio.notes || '',
+        created_at: cardio.created_at,
+        updated_at: cardio.updated_at,
+      };
+
       const { error } = await supabase
         .from('cardio_logs')
-        .upsert(cardioData as any);
+        .upsert(dataToUpload as any);
 
       if (error) {
         // Cardio logs table might not exist in Supabase yet - that's ok
-        if (!error.message.includes('does not exist')) {
+        if (!error.message.includes('does not exist') && !error.message.includes('relation') ) {
           console.error('[Sync] Cardio log upload error:', error.message);
           this.syncErrors.push(`Cardio log: ${error.message}`);
         }
