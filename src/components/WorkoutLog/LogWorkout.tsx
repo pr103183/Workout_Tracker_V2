@@ -351,7 +351,7 @@ export const LogWorkout: React.FC = () => {
   };
 
   const handleFinishWorkout = async () => {
-    if (!currentLog) return;
+    if (!currentLog || !user) return;
 
     const now = new Date().toISOString();
     await db.workout_logs.update(currentLog.id, {
@@ -366,6 +366,17 @@ export const LogWorkout: React.FC = () => {
     if (finishButton) {
       finishButton.classList.add('celebrate');
       setTimeout(() => finishButton.classList.remove('celebrate'), 600);
+    }
+
+    // Immediately sync to cloud after completing workout
+    try {
+      const { syncService } = await import('../../lib/sync');
+      console.log('[Workout] Triggering immediate sync after workout completion');
+      await syncService.forceSyncNow(user.id);
+      console.log('[Workout] Post-workout sync completed');
+    } catch (syncError) {
+      console.error('[Workout] Post-workout sync failed:', syncError);
+      // Don't block the user, sync will retry later
     }
 
     alert('Workout completed! Great job!');

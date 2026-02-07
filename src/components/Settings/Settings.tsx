@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { syncService } from '../../lib/sync';
 
 export const Settings: React.FC = () => {
   const { user } = useAuth();
@@ -11,6 +12,40 @@ export const Settings: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Update sync status periodically
+    const updateSyncStatus = () => {
+      const status = syncService.getSyncStatus();
+      setLastSync(status.lastSyncDate);
+      setSyncError(status.errors.length > 0 ? status.errors.join(', ') : null);
+    };
+    updateSyncStatus();
+    const interval = setInterval(updateSyncStatus, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleManualSync = async () => {
+    if (!user) return;
+    setSyncing(true);
+    setSyncError(null);
+    try {
+      const success = await syncService.forceSyncNow(user.id);
+      if (success) {
+        setLastSync(new Date().toISOString());
+      } else {
+        const status = syncService.getSyncStatus();
+        setSyncError(status.errors.join(', '));
+      }
+    } catch (err: any) {
+      setSyncError(err.message || 'Sync failed');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,6 +137,40 @@ export const Settings: React.FC = () => {
               <span className="label">User ID</span>
               <p className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>{user?.id}</p>
             </div>
+          </div>
+        </div>
+
+        <div className="card mb-6">
+          <h3 className="text-lg font-semibold mb-4">Cloud Sync</h3>
+          <div className="space-y-4">
+            <div>
+              <span className="label">Last Sync</span>
+              <p style={{ color: 'var(--text-primary)' }}>
+                {lastSync ? new Date(lastSync).toLocaleString() : 'Never synced'}
+              </p>
+            </div>
+            <div>
+              <span className="label">Status</span>
+              <p style={{ color: navigator.onLine ? 'var(--success)' : 'var(--text-muted)' }}>
+                {navigator.onLine ? '🟢 Online' : '🔴 Offline'}
+              </p>
+            </div>
+            {syncError && (
+              <div className="bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 rounded text-sm">
+                <strong>Sync Error:</strong> {syncError}
+              </div>
+            )}
+            <button
+              onClick={handleManualSync}
+              disabled={syncing || !navigator.onLine}
+              className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {syncing ? 'Syncing...' : 'Sync Now'}
+            </button>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              Data syncs automatically every 60 seconds and after completing workouts.
+              Use this button to force an immediate sync.
+            </p>
           </div>
         </div>
 
